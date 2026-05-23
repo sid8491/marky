@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { renderMarkdown } from '@/preview/pipeline'
 import { hydrateMermaidBlocks } from '@/preview/mermaid'
+import {
+  applyScrollFraction,
+  broadcastScroll,
+  scrollFraction,
+  subscribeScroll
+} from '@/editor/scrollSync'
 import { useSettings } from '@/store/settings'
 import type { Tab } from '@/store/tabs'
 
@@ -8,7 +14,8 @@ export function PreviewPane({ tab }: { tab: Tab }): React.ReactElement {
   const [html, setHtml] = useState('')
   const [error, setError] = useState<string | null>(null)
   const dark = useSettings((s) => s.resolvedDark)
-  const containerRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const articleRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -33,14 +40,42 @@ export function PreviewPane({ tab }: { tab: Tab }): React.ReactElement {
   }, [tab.content])
 
   useEffect(() => {
-    if (!containerRef.current) return
-    void hydrateMermaidBlocks(containerRef.current, dark).catch((err) => {
+    if (!articleRef.current) return
+    void hydrateMermaidBlocks(articleRef.current, dark).catch((err) => {
       console.error('[preview] mermaid failed:', err)
     })
   }, [html, dark])
 
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    let receivingProgrammaticScroll = false
+
+    const onScroll = (): void => {
+      if (receivingProgrammaticScroll) return
+      if (!useSettings.getState().syncScroll) return
+      broadcastScroll('preview', scrollFraction(el))
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+
+    const unsubscribe = subscribeScroll((source, fraction) => {
+      if (source === 'preview') return
+      if (!useSettings.getState().syncScroll) return
+      receivingProgrammaticScroll = true
+      applyScrollFraction(el, fraction)
+      requestAnimationFrame(() => {
+        receivingProgrammaticScroll = false
+      })
+    })
+
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      unsubscribe()
+    }
+  }, [])
+
   return (
-    <div className="allow-select h-full overflow-auto bg-surface">
+    <div ref={scrollRef} className="allow-select h-full overflow-auto bg-surface">
       {error && (
         <div className="m-6 rounded-lg border border-red-500/40 bg-red-500/10 p-4">
           <div className="mb-1 text-sm font-medium text-red-500">
@@ -52,7 +87,7 @@ export function PreviewPane({ tab }: { tab: Tab }): React.ReactElement {
         </div>
       )}
       <article
-        ref={containerRef}
+        ref={articleRef}
         className="preview"
         // HTML produced by our own unified pipeline (remark-rehype with
         // allowDangerousHtml: false → embedded HTML in source is escaped).

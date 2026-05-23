@@ -28,6 +28,12 @@ import { markyTheme } from '@/editor/theme'
 import { imagePasteExtension } from '@/editor/imagePaste'
 import { ghostTextExtension } from '@/editor/ghostText'
 import { selectionTrackerExtension, type SelectionInfo } from '@/editor/selectionTracker'
+import {
+  applyScrollFraction,
+  broadcastScroll,
+  scrollFraction,
+  subscribeScroll
+} from '@/editor/scrollSync'
 import { SelectionToolbar } from './SelectionToolbar'
 
 export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
@@ -83,7 +89,29 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
     const view = new EditorView({ state, parent: hostRef.current })
     viewRef.current = view
 
+    const scrollDom = view.scrollDOM
+    let receivingProgrammaticScroll = false
+
+    const onScroll = (): void => {
+      if (receivingProgrammaticScroll) return
+      if (!useSettings.getState().syncScroll) return
+      broadcastScroll('editor', scrollFraction(scrollDom))
+    }
+    scrollDom.addEventListener('scroll', onScroll, { passive: true })
+
+    const unsubscribeScroll = subscribeScroll((source, fraction) => {
+      if (source === 'editor') return
+      if (!useSettings.getState().syncScroll) return
+      receivingProgrammaticScroll = true
+      applyScrollFraction(scrollDom, fraction)
+      requestAnimationFrame(() => {
+        receivingProgrammaticScroll = false
+      })
+    })
+
     return () => {
+      scrollDom.removeEventListener('scroll', onScroll)
+      unsubscribeScroll()
       view.destroy()
       viewRef.current = null
       setSelectionInfo(null)
