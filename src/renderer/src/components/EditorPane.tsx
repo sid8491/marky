@@ -38,12 +38,23 @@ import { setActiveEditorView } from '@/editor/activeView'
 import { SelectionToolbar } from './SelectionToolbar'
 
 export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const updateContent = useTabs((s) => s.updateContent)
   const dark = useSettings((s) => s.resolvedDark)
   const showLineNumbers = useSettings((s) => s.showLineNumbers)
   const [selectionInfo, setSelectionInfo] = useState<SelectionInfo | null>(null)
+  const [paneWidth, setPaneWidth] = useState(0)
+
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    setPaneWidth(el.clientWidth)
+    const observer = new ResizeObserver(() => setPaneWidth(el.clientWidth))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (!hostRef.current) return
@@ -136,9 +147,13 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
   }, [tab.content])
 
   return (
-    <div className="relative h-full w-full">
+    <div ref={wrapperRef} className="relative h-full w-full">
       <div ref={hostRef} className="allow-select h-full w-full overflow-auto" />
-      <SelectionToolbar info={selectionInfo} viewRef={viewRef} />
+      <SelectionToolbar
+        info={selectionInfo}
+        viewRef={viewRef}
+        containerWidth={paneWidth}
+      />
     </div>
   )
 }

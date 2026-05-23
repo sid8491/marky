@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -50,33 +50,19 @@ const TONE_OPTIONS: { value: RefineAction; label: string }[] = [
 
 export function SelectionToolbar({
   info,
-  viewRef
+  viewRef,
+  containerWidth
 }: {
   info: SelectionInfo | null
   viewRef: React.MutableRefObject<EditorView | null>
+  containerWidth: number
 }): React.ReactElement | null {
   const settings = useAi((s) => s.settings)
   const [refine, setRefine] = useState<RefineState>(initialRefine)
   const [tonesOpen, setTonesOpen] = useState(false)
   const [customOpen, setCustomOpen] = useState(false)
   const [customInput, setCustomInput] = useState('')
-  const [containerWidth, setContainerWidth] = useState(800)
   const containerRef = useRef<HTMLDivElement>(null)
-
-  // Track the editor pane width via ResizeObserver so we can clamp the
-  // toolbar horizontally during render without reading refs.
-  useEffect(() => {
-    const container = viewRef.current?.dom.parentElement
-    if (!container) return
-    setContainerWidth(container.clientWidth)
-    const observer = new ResizeObserver(() => {
-      setContainerWidth(container.clientWidth)
-    })
-    observer.observe(container)
-    return () => observer.disconnect()
-    // viewRef is stable for the lifetime of an EditorPane mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // Derived: menus only show when a selection exists.
   const showTones = tonesOpen && info != null
@@ -189,7 +175,7 @@ export function SelectionToolbar({
 
   // Positioning: prefer above the selection; flip below if there's no room.
   // Clamp horizontally to keep the toolbar inside the editor pane bounds.
-  const TOOLBAR_WIDTH_EST = 380
+  const TOOLBAR_WIDTH_EST = 540
   const TOOLBAR_HEIGHT_EST = 38
   const EDGE_PADDING = 8
   const halfWidth = TOOLBAR_WIDTH_EST / 2
@@ -199,9 +185,14 @@ export function SelectionToolbar({
   if (info) {
     const desiredTop = info.top - TOOLBAR_HEIGHT_EST - EDGE_PADDING
     top = desiredTop >= EDGE_PADDING ? desiredTop : info.bottom + EDGE_PADDING
-    const minLeft = halfWidth + EDGE_PADDING
-    const maxLeft = Math.max(minLeft, containerWidth - halfWidth - EDGE_PADDING)
-    left = Math.max(minLeft, Math.min(maxLeft, info.centerX))
+    if (containerWidth > 0) {
+      const minLeft = halfWidth + EDGE_PADDING
+      const maxLeft = Math.max(minLeft, containerWidth - halfWidth - EDGE_PADDING)
+      left = Math.max(minLeft, Math.min(maxLeft, info.centerX))
+    } else {
+      // Width not measured yet — fall back to the raw selection center.
+      left = Math.max(halfWidth + EDGE_PADDING, info.centerX)
+    }
   }
 
   if (refine.active) {
