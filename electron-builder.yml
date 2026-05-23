@@ -24,6 +24,10 @@ nsis:
   createDesktopShortcut: always
 mac:
   category: public.app-category.productivity
+  # Code signing and notarization disabled until credentials are available.
+  # Users will see Gatekeeper warnings on first launch; see README for the bypass.
+  identity: null
+  notarize: false
   target:
     - target: dmg
       arch:
