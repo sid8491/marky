@@ -180,17 +180,25 @@
   overflow-y: hidden;
 }
 
-/* Shiki dual-theme code blocks */
-.preview .shiki,
+/* Shiki dual-theme code blocks.
+ * With defaultColor: false in the pipeline config, Shiki emits --shiki-light /
+ * --shiki-dark vars instead of baking one theme into inline styles. The pre
+ * carries the background; spans only carry text color so we don't double-paint
+ * each token. */
+.preview .shiki {
+  background-color: var(--shiki-light-bg);
+  color: var(--shiki-light);
+}
 .preview .shiki span {
   color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
 }
 
-html.dark .preview .shiki,
+html.dark .preview .shiki {
+  background-color: var(--shiki-dark-bg);
+  color: var(--shiki-dark);
+}
 html.dark .preview .shiki span {
   color: var(--shiki-dark);
-  background-color: var(--shiki-dark-bg);
 }
 
 .preview pre.shiki {

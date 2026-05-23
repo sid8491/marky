@@ -46,6 +46,11 @@ const processor = unified()
   .use(rehypeMermaidExtract)
   .use(rehypeShiki, {
     themes: { light: 'github-light', dark: 'github-dark-default' },
+    // Emit BOTH themes as CSS variables instead of inlining one.
+    // Without this, Shiki bakes the light theme into inline `style` attributes,
+    // and inline styles win over our html.dark CSS overrides — leaving code
+    // blocks light-themed even in dark mode.
+    defaultColor: false,
     defaultLanguage: 'text',
     fallbackLanguage: 'text',
     lazy: true,
