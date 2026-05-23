@@ -12,10 +12,9 @@ export function createMainWindow(): BrowserWindow {
     autoHideMenuBar: true,
     frame: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
-    titleBarOverlay:
-      process.platform === 'win32'
-        ? { color: '#0b0b0e', symbolColor: '#cfd0d6', height: 36 }
-        : false,
+    // No titleBarOverlay — we render the min/max/close controls ourselves
+    // in React (see components/TitleBar.tsx). Having both creates duplicate
+    // buttons and steals click areas from our drag region.
     trafficLightPosition: { x: 14, y: 12 },
     backgroundColor: '#0b0b0e',
     vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,

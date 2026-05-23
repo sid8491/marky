@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -60,7 +60,23 @@ export function SelectionToolbar({
   const [tonesOpen, setTonesOpen] = useState(false)
   const [customOpen, setCustomOpen] = useState(false)
   const [customInput, setCustomInput] = useState('')
+  const [containerWidth, setContainerWidth] = useState(800)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Track the editor pane width via ResizeObserver so we can clamp the
+  // toolbar horizontally during render without reading refs.
+  useEffect(() => {
+    const container = viewRef.current?.dom.parentElement
+    if (!container) return
+    setContainerWidth(container.clientWidth)
+    const observer = new ResizeObserver(() => {
+      setContainerWidth(container.clientWidth)
+    })
+    observer.observe(container)
+    return () => observer.disconnect()
+    // viewRef is stable for the lifetime of an EditorPane mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Derived: menus only show when a selection exists.
   const showTones = tonesOpen && info != null
@@ -171,9 +187,22 @@ export function SelectionToolbar({
     setTimeout(() => startRefine(refine.action), 50)
   }
 
-  // Positioning: above the selection if room, else below
-  const top = info ? Math.max(8, info.top - 44) : 8
-  const left = info ? Math.max(8, info.centerX) : 8
+  // Positioning: prefer above the selection; flip below if there's no room.
+  // Clamp horizontally to keep the toolbar inside the editor pane bounds.
+  const TOOLBAR_WIDTH_EST = 380
+  const TOOLBAR_HEIGHT_EST = 38
+  const EDGE_PADDING = 8
+  const halfWidth = TOOLBAR_WIDTH_EST / 2
+
+  let top = EDGE_PADDING
+  let left = halfWidth + EDGE_PADDING
+  if (info) {
+    const desiredTop = info.top - TOOLBAR_HEIGHT_EST - EDGE_PADDING
+    top = desiredTop >= EDGE_PADDING ? desiredTop : info.bottom + EDGE_PADDING
+    const minLeft = halfWidth + EDGE_PADDING
+    const maxLeft = Math.max(minLeft, containerWidth - halfWidth - EDGE_PADDING)
+    left = Math.max(minLeft, Math.min(maxLeft, info.centerX))
+  }
 
   if (refine.active) {
     return (
@@ -183,10 +212,7 @@ export function SelectionToolbar({
         className={cn(
           'pointer-events-auto absolute z-30 -translate-x-1/2 rounded-lg border border-strong bg-elevated px-1.5 py-1 shadow-elevated'
         )}
-        style={{
-          top: Math.max(8, refine.streaming ? top : top),
-          left
-        }}
+        style={{ top, left }}
       >
         <div className="flex items-center gap-1">
           {refine.streaming ? (

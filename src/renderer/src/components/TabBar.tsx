@@ -9,7 +9,11 @@ export function TabBar(): React.ReactElement {
   const setActive = useTabs((s) => s.setActive)
 
   return (
-    <div className="app-no-drag flex h-full items-stretch overflow-x-auto">
+    // Inherits app-drag from the title bar; individual interactive children
+    // re-opt-out with app-no-drag so they remain clickable, leaving the empty
+    // area after the last tab/button as a drag handle (for window move +
+    // double-click to maximize).
+    <div className="flex h-full items-stretch overflow-x-auto">
       {tabs.map((t) => (
         <TabItem
           key={t.id}
@@ -21,7 +25,7 @@ export function TabBar(): React.ReactElement {
       <button
         onClick={() => newTab()}
         title="New tab (Ctrl+N)"
-        className="flex w-9 shrink-0 items-center justify-center text-faint hover:text-default transition-colors"
+        className="app-no-drag flex w-9 shrink-0 items-center justify-center text-faint transition-colors hover:text-default"
       >
         <Plus className="size-4" />
       </button>
@@ -51,7 +55,7 @@ function TabItem({
         }
       }}
       className={cn(
-        'group relative flex h-full max-w-56 min-w-32 shrink-0 cursor-pointer items-center gap-2 border-r border-subtle px-3 text-sm transition-colors',
+        'app-no-drag group relative flex h-full max-w-56 min-w-32 shrink-0 cursor-pointer items-center gap-2 border-r border-subtle px-3 text-sm transition-colors',
         active
           ? 'bg-surface text-default'
           : 'text-muted hover:bg-elevated/60 hover:text-default'

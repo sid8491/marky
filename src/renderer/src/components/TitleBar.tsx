@@ -25,8 +25,19 @@ export function TitleBar(): React.ReactElement {
     setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light')
   }
 
+  // Frameless windows on Win/Linux don't auto-handle double-click-to-maximize.
+  // Toggle it ourselves, but only when the click landed in an actual drag
+  // region (i.e. not on a tab or any other interactive child).
+  const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
+    if (isMac) return
+    const target = e.target as HTMLElement
+    if (target.closest('.app-no-drag')) return
+    window.marky.win.maximize()
+  }
+
   return (
     <div
+      onDoubleClick={handleDoubleClick}
       className={cn(
         'app-drag flex h-9 items-stretch border-b border-subtle bg-panel select-none',
         isMac && 'pl-20'
