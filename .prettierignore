@@ -1,0 +1,8 @@
+node_modules
+out
+dist
+release
+build/icons
+package-lock.json
+*.min.js
+*.min.css

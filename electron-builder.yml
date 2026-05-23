@@ -35,5 +35,5 @@ linux:
   category: Office
   maintainer: marky
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  provider: github
+  releaseType: release

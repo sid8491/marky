@@ -1,17 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC, type Platform } from '@shared/ipc-contract'
+import { IPC, type Platform, type UpdateEvent } from '@shared/ipc-contract'
 import type {
   ExportPdfOptions,
   FileReadResult,
   OpenFileOptions,
   SaveDialogResult
 } from '@shared/types'
-import type {
-  AIChatRequest,
-  AIProvider,
-  AISettings,
-  AIStreamEvent
-} from '@shared/ai'
+import type { AIChatRequest, AIProvider, AISettings, AIStreamEvent } from '@shared/ai'
 
 const api = {
   platform: () => ipcRenderer.invoke(IPC.PLATFORM) as Promise<Platform>,
@@ -58,9 +53,18 @@ const api = {
       path?: string
     }>,
 
+  updates: {
+    check: () => ipcRenderer.send(IPC.UPDATE_CHECK),
+    install: () => ipcRenderer.send(IPC.UPDATE_INSTALL),
+    onEvent: (cb: (event: UpdateEvent) => void) => {
+      const listener = (_: unknown, event: UpdateEvent): void => cb(event)
+      ipcRenderer.on(IPC.UPDATE_EVENT, listener)
+      return () => ipcRenderer.off(IPC.UPDATE_EVENT, listener)
+    }
+  },
+
   ai: {
-    getSettings: () =>
-      ipcRenderer.invoke(IPC.AI_SETTINGS_GET) as Promise<AISettings>,
+    getSettings: () => ipcRenderer.invoke(IPC.AI_SETTINGS_GET) as Promise<AISettings>,
     setSettings: (partial: Partial<Omit<AISettings, 'keys'>>) =>
       ipcRenderer.invoke(IPC.AI_SETTINGS_SET, partial) as Promise<AISettings>,
     setKey: (provider: AIProvider, key: string) =>

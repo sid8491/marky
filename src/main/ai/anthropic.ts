@@ -27,10 +27,7 @@ export async function* streamAnthropic(
 
   for await (const event of stream) {
     if (abort.aborted) break
-    if (
-      event.type === 'content_block_delta' &&
-      event.delta.type === 'text_delta'
-    ) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
       yield event.delta.text
     }
   }

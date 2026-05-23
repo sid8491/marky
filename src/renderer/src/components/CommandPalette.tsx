@@ -214,10 +214,6 @@ export function CommandPalette(): React.ReactElement {
       .map((x) => x.c)
   }, [query, commands])
 
-  useEffect(() => {
-    setActiveIndex(0)
-  }, [query])
-
   const run = (cmd: Command): void => {
     setOpen(false)
     setQuery('')
@@ -247,7 +243,10 @@ export function CommandPalette(): React.ReactElement {
             <input
               ref={inputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setActiveIndex(0)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowDown') {
                   e.preventDefault()
@@ -266,9 +265,7 @@ export function CommandPalette(): React.ReactElement {
             />
             <div className="max-h-80 overflow-y-auto py-1">
               {filtered.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-faint">
-                  No results
-                </div>
+                <div className="px-4 py-8 text-center text-sm text-faint">No results</div>
               )}
               {filtered.map((c, i) => (
                 <button
@@ -283,9 +280,7 @@ export function CommandPalette(): React.ReactElement {
                   <c.icon className="size-4 shrink-0 text-faint" />
                   <span className="flex-1 truncate">
                     {c.label}
-                    {c.hint && (
-                      <span className="ml-2 text-xs text-faint">{c.hint}</span>
-                    )}
+                    {c.hint && <span className="ml-2 text-xs text-faint">{c.hint}</span>}
                   </span>
                   <span className="shrink-0 text-xs text-faint">{c.group}</span>
                   {c.shortcut && (

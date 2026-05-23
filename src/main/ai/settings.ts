@@ -1,11 +1,7 @@
 import { app, safeStorage } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
-import {
-  DEFAULT_AI_SETTINGS,
-  type AIProvider,
-  type AISettings
-} from '@shared/ai'
+import { DEFAULT_AI_SETTINGS, type AIProvider, type AISettings } from '@shared/ai'
 
 interface PersistedShape {
   provider?: AIProvider
@@ -44,10 +40,8 @@ function publicSettings(p: PersistedShape): AISettings {
     provider: p.provider ?? DEFAULT_AI_SETTINGS.provider,
     models: { ...DEFAULT_AI_SETTINGS.models, ...(p.models ?? {}) },
     temperature: p.temperature ?? DEFAULT_AI_SETTINGS.temperature,
-    ghostTextEnabled:
-      p.ghostTextEnabled ?? DEFAULT_AI_SETTINGS.ghostTextEnabled,
-    ghostTextDebounceMs:
-      p.ghostTextDebounceMs ?? DEFAULT_AI_SETTINGS.ghostTextDebounceMs,
+    ghostTextEnabled: p.ghostTextEnabled ?? DEFAULT_AI_SETTINGS.ghostTextEnabled,
+    ghostTextDebounceMs: p.ghostTextDebounceMs ?? DEFAULT_AI_SETTINGS.ghostTextDebounceMs,
     ollamaUrl: p.ollamaUrl ?? DEFAULT_AI_SETTINGS.ollamaUrl,
     keys: {
       anthropic: Boolean(p.encryptedKeys?.anthropic),

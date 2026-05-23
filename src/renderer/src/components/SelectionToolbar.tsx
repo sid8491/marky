@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -57,18 +57,14 @@ export function SelectionToolbar({
 }): React.ReactElement | null {
   const settings = useAi((s) => s.settings)
   const [refine, setRefine] = useState<RefineState>(initialRefine)
-  const [showTones, setShowTones] = useState(false)
-  const [showCustom, setShowCustom] = useState(false)
+  const [tonesOpen, setTonesOpen] = useState(false)
+  const [customOpen, setCustomOpen] = useState(false)
   const [customInput, setCustomInput] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Hide toolbar/refine if selection vanishes during idle
-  useEffect(() => {
-    if (!info && !refine.active && !refine.streaming) {
-      setShowTones(false)
-      setShowCustom(false)
-    }
-  }, [info, refine.active, refine.streaming])
+  // Derived: menus only show when a selection exists.
+  const showTones = tonesOpen && info != null
+  const showCustom = customOpen && info != null
 
   if (!info && !refine.active) return null
 
@@ -276,7 +272,7 @@ export function SelectionToolbar({
           />
           <div className="relative">
             <ToolbarButton
-              onClick={() => setShowTones((s) => !s)}
+              onClick={() => setTonesOpen((s) => !s)}
               icon={<ChevronDown className="size-3" />}
               label="Tone"
               trailing
@@ -293,7 +289,7 @@ export function SelectionToolbar({
                     <button
                       key={t.value}
                       onClick={() => {
-                        setShowTones(false)
+                        setTonesOpen(false)
                         startRefine(t.value)
                       }}
                       className="block w-full rounded px-2 py-1 text-left text-xs text-muted hover:bg-panel hover:text-default"
@@ -307,7 +303,7 @@ export function SelectionToolbar({
           </div>
           <div className="mx-1 h-4 w-px bg-subtle" />
           <ToolbarButton
-            onClick={() => setShowCustom((s) => !s)}
+            onClick={() => setCustomOpen((s) => !s)}
             icon={<Sparkles className="size-3" />}
             label="Ask AI"
           />
@@ -330,7 +326,7 @@ export function SelectionToolbar({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && customInput.trim()) {
                       e.preventDefault()
-                      setShowCustom(false)
+                      setCustomOpen(false)
                       startRefine('custom', customInput.trim())
                       setCustomInput('')
                     }
@@ -339,7 +335,7 @@ export function SelectionToolbar({
                 <button
                   onClick={() => {
                     if (customInput.trim()) {
-                      setShowCustom(false)
+                      setCustomOpen(false)
                       startRefine('custom', customInput.trim())
                       setCustomInput('')
                     }

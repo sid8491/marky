@@ -1,0 +1,93 @@
+name: Bug report
+description: Something isn't working as expected.
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please give as much detail as you can — minimal repros save us hours.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing the problem.
+      placeholder: Preview pane goes blank when I paste a Mermaid diagram with…
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps. Include a tiny sample of the markdown if relevant.
+      placeholder: |
+        1. Open Marky
+        2. New tab (Ctrl+N)
+        3. Paste this:
+           ```mermaid
+           graph TD
+           A --> B
+           ```
+        4. Observe…
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: If there's a red error card in the preview, paste the text. If DevTools shows an error in the console, paste the stack trace.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Marky version
+      description: See Settings → About, or `package.json` if running from source.
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS 15 (Sequoia)
+        - macOS 14 (Sonoma)
+        - macOS 13 (Ventura)
+        - Ubuntu / Debian
+        - Fedora / RHEL
+        - Arch
+        - Other Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: AI provider involved (if any)
+      options:
+        - Not applicable
+        - Anthropic
+        - OpenAI
+        - Google
+        - Ollama
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / video
+      description: Drag and drop here. Strongly preferred for UI bugs.

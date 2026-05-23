@@ -20,10 +20,7 @@ async function load(): Promise<MermaidApi> {
 
 let counter = 0
 
-export async function renderMermaid(
-  source: string,
-  dark: boolean
-): Promise<string> {
+export async function renderMermaid(source: string, dark: boolean): Promise<string> {
   const m = await load()
   m.initialize({
     startOnLoad: false,
@@ -62,8 +59,5 @@ export async function hydrateMermaidBlocks(
 }
 
 function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

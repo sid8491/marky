@@ -35,7 +35,7 @@ A beautiful cross-platform Markdown editor with first-class AI assistance and pi
 
 ## Install
 
-Pre-built installers are published on the [Releases](https://github.com/REPLACE_ME/marky/releases) page. Pick the one for your OS.
+Pre-built installers are published on the [Releases](https://github.com/sid8491/marky/releases) page. Pick the one for your OS.
 
 ### Windows
 
@@ -75,16 +75,17 @@ Until the build is notarized, Gatekeeper will block the first launch. Right-clic
 2. Pick a provider and enter your API key.
 3. Click **Test** — you should see "connected".
 
-| Provider  | Where to get a key                            |
-| --------- | --------------------------------------------- |
-| Anthropic | https://console.anthropic.com/                |
-| OpenAI    | https://platform.openai.com/api-keys          |
-| Google    | https://aistudio.google.com/app/apikey        |
+| Provider  | Where to get a key                                                                                                         |
+| --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Anthropic | https://console.anthropic.com/                                                                                             |
+| OpenAI    | https://platform.openai.com/api-keys                                                                                       |
+| Google    | https://aistudio.google.com/app/apikey                                                                                     |
 | Ollama    | No key required — install Ollama locally and ensure it's running on the configured URL (default `http://localhost:11434`). |
 
 Keys are encrypted at rest and stored in `<userData>/ai-settings.json` using your OS keychain. Removing the file resets all keys and AI settings.
 
 `<userData>` resolves to:
+
 - Windows: `%APPDATA%\Marky\`
 - macOS: `~/Library/Application Support/Marky/`
 - Linux: `~/.config/Marky/`
@@ -104,7 +105,7 @@ For development, contributing, or building your own installers.
 **Run in dev mode**
 
 ```bash
-git clone <repo-url> marky
+git clone https://github.com/sid8491/marky.git
 cd marky
 npm install
 npm run dev
@@ -116,22 +117,22 @@ The Electron window opens with HMR enabled. Press `Ctrl+K` for the command palet
 
 ## Keyboard shortcuts
 
-| Shortcut          | Action                          |
-| ----------------- | ------------------------------- |
-| `Ctrl+N`          | New file                        |
-| `Ctrl+O`          | Open file                       |
-| `Ctrl+S`          | Save                            |
-| `Ctrl+Shift+S`    | Save as                         |
-| `Ctrl+W`          | Close active tab                |
-| `Ctrl+E`          | Export to PDF                   |
-| `Ctrl+K`          | Command palette                 |
-| `Ctrl+,`          | Settings                        |
-| `Ctrl+F`          | Find in editor                  |
-| `Ctrl+\`          | Toggle split view               |
-| `Ctrl+Shift+E`    | Editor only                     |
-| `Ctrl+Shift+V`    | Preview only                    |
-| `Tab` *(editor)*  | Accept ghost-text suggestion    |
-| `Esc` *(editor)*  | Dismiss ghost-text suggestion   |
+| Shortcut         | Action                        |
+| ---------------- | ----------------------------- |
+| `Ctrl+N`         | New file                      |
+| `Ctrl+O`         | Open file                     |
+| `Ctrl+S`         | Save                          |
+| `Ctrl+Shift+S`   | Save as                       |
+| `Ctrl+W`         | Close active tab              |
+| `Ctrl+E`         | Export to PDF                 |
+| `Ctrl+K`         | Command palette               |
+| `Ctrl+,`         | Settings                      |
+| `Ctrl+F`         | Find in editor                |
+| `Ctrl+\`         | Toggle split view             |
+| `Ctrl+Shift+E`   | Editor only                   |
+| `Ctrl+Shift+V`   | Preview only                  |
+| `Tab` _(editor)_ | Accept ghost-text suggestion  |
+| `Esc` _(editor)_ | Dismiss ghost-text suggestion |
 
 On macOS, substitute `Cmd` for `Ctrl`.
 
@@ -139,21 +140,21 @@ On macOS, substitute `Cmd` for `Ctrl`.
 
 ## Tech stack
 
-| Layer        | Tech                                                       |
-| ------------ | ---------------------------------------------------------- |
-| Runtime      | Electron 42 (Chromium + Node.js)                           |
-| Build        | electron-vite, Vite 7, electron-builder                    |
-| UI           | React 19 + TypeScript, Tailwind CSS v4                     |
-| Motion       | Framer Motion (`motion`)                                   |
-| Icons        | Lucide                                                     |
-| Editor       | CodeMirror 6 with custom theme + extensions                |
-| Markdown     | unified · remark-parse · remark-gfm · remark-math · remark-rehype |
-| Highlighting | Shiki (with dual light/dark theme)                         |
-| Math         | KaTeX                                                      |
-| Diagrams     | Mermaid (dynamic import)                                   |
-| State        | Zustand                                                    |
+| Layer        | Tech                                                                      |
+| ------------ | ------------------------------------------------------------------------- |
+| Runtime      | Electron 42 (Chromium + Node.js)                                          |
+| Build        | electron-vite, Vite 7, electron-builder                                   |
+| UI           | React 19 + TypeScript, Tailwind CSS v4                                    |
+| Motion       | Framer Motion (`motion`)                                                  |
+| Icons        | Lucide                                                                    |
+| Editor       | CodeMirror 6 with custom theme + extensions                               |
+| Markdown     | unified · remark-parse · remark-gfm · remark-math · remark-rehype         |
+| Highlighting | Shiki (with dual light/dark theme)                                        |
+| Math         | KaTeX                                                                     |
+| Diagrams     | Mermaid (dynamic import)                                                  |
+| State        | Zustand                                                                   |
 | AI SDKs      | `@anthropic-ai/sdk`, `openai`, `@google/genai`, native `fetch` for Ollama |
-| Key storage  | Electron `safeStorage` (OS keychain)                       |
+| Key storage  | Electron `safeStorage` (OS keychain)                                      |
 
 ---
 
@@ -212,6 +213,7 @@ src/
 ### Pixel-perfect PDF
 
 The export pipeline:
+
 1. Re-runs the markdown through the same `remark/rehype` chain used for live preview.
 2. Resolves Mermaid blocks to inline SVG so the hidden window doesn't need to bootstrap Mermaid.
 3. Spawns a hidden `BrowserWindow`, loads an HTML document with the inlined preview CSS + KaTeX CSS.
@@ -240,12 +242,12 @@ Code signing certificates and auto-update endpoints are not yet wired up — see
 
 ## Scripts
 
-| Script              | What it does                                           |
-| ------------------- | ------------------------------------------------------ |
-| `npm run dev`       | Start electron-vite dev server with HMR.               |
-| `npm run build`     | Production bundle to `out/`.                           |
+| Script              | What it does                                                      |
+| ------------------- | ----------------------------------------------------------------- |
+| `npm run dev`       | Start electron-vite dev server with HMR.                          |
+| `npm run build`     | Production bundle to `out/`.                                      |
 | `npm run typecheck` | TypeScript check for both Node (main+preload) and Web (renderer). |
-| `npm run build:*`   | Produce installers per platform (see above).           |
+| `npm run build:*`   | Produce installers per platform (see above).                      |
 
 ---
 

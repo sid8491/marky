@@ -27,10 +27,7 @@ import { useSettings } from '@/store/settings'
 import { markyTheme } from '@/editor/theme'
 import { imagePasteExtension } from '@/editor/imagePaste'
 import { ghostTextExtension } from '@/editor/ghostText'
-import {
-  selectionTrackerExtension,
-  type SelectionInfo
-} from '@/editor/selectionTracker'
+import { selectionTrackerExtension, type SelectionInfo } from '@/editor/selectionTracker'
 import { SelectionToolbar } from './SelectionToolbar'
 
 export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
@@ -91,6 +88,8 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
       viewRef.current = null
       setSelectionInfo(null)
     }
+    // Initial content is captured at mount; subsequent changes are synced by
+    // the second effect below. updateContent comes from a stable Zustand selector.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab.id, dark, showLineNumbers])
 
@@ -103,7 +102,6 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
         changes: { from: 0, to: current.length, insert: tab.content }
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab.content])
 
   return (

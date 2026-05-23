@@ -5,6 +5,7 @@ import { registerWindowIpc } from './ipc/window'
 import { registerFileIpc, disposeFileWatchers } from './ipc/files'
 import { registerPdfIpc } from './ipc/pdf'
 import { registerAiIpc } from './ipc/ai'
+import { registerUpdatesIpc } from './ipc/updates'
 
 function installCsp(): void {
   // Dev needs unsafe-eval/unsafe-inline for Vite HMR + Fast Refresh.
@@ -57,6 +58,7 @@ app.whenReady().then(() => {
   registerFileIpc(getMainWindow)
   registerPdfIpc(getMainWindow)
   registerAiIpc(getMainWindow)
+  registerUpdatesIpc(getMainWindow)
 
   mainWindow = createMainWindow()
   mainWindow.on('closed', () => {

@@ -1,10 +1,4 @@
-import {
-  Decoration,
-  EditorView,
-  ViewPlugin,
-  WidgetType,
-  keymap
-} from '@codemirror/view'
+import { Decoration, EditorView, ViewPlugin, WidgetType, keymap } from '@codemirror/view'
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { useAi } from '@/store/ai'
 import { startStream, type AIStreamHandle } from '@/ai/client'

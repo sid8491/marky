@@ -20,10 +20,7 @@ export interface AIStreamHandle {
   cancel: () => void
 }
 
-export function startStream(
-  request: AIChatRequest,
-  onEvent: Sub
-): AIStreamHandle {
+export function startStream(request: AIChatRequest, onEvent: Sub): AIStreamHandle {
   ensureSub()
   const id = uid('ai')
   subs.set(id, (event) => {

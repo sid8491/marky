@@ -45,7 +45,8 @@ const initial = load()
 
 export const useSettings = create<SettingsState>((set, get) => ({
   theme: initial.theme ?? 'system',
-  resolvedDark: initial.theme === 'light' ? false : initial.theme === 'dark' ? true : systemDark(),
+  resolvedDark:
+    initial.theme === 'light' ? false : initial.theme === 'dark' ? true : systemDark(),
   syncScroll: initial.syncScroll ?? true,
   showLineNumbers: initial.showLineNumbers ?? false,
 

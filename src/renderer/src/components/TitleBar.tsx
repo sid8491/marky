@@ -71,11 +71,7 @@ export function TitleBar(): React.ReactElement {
           >
             {isMax ? <Copy className="size-3.5" /> : <Square className="size-3.5" />}
           </WinButton>
-          <WinButton
-            onClick={() => window.marky.win.close()}
-            label="Close"
-            danger
-          >
+          <WinButton onClick={() => window.marky.win.close()} label="Close" danger>
             <X className="size-4" />
           </WinButton>
         </div>
@@ -101,7 +97,9 @@ function WinButton({
       onClick={onClick}
       className={cn(
         'flex w-11 items-center justify-center text-faint transition-colors',
-        danger ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-elevated hover:text-default'
+        danger
+          ? 'hover:bg-red-500 hover:text-white'
+          : 'hover:bg-elevated hover:text-default'
       )}
     >
       {children}

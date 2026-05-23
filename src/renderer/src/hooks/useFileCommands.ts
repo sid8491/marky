@@ -106,6 +106,8 @@ export function useFileCommands(): {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+    // Handlers read live state via useTabs.getState() — no deps needed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return { newDoc, openFile, openPath, saveActive, saveActiveAs, closeActive, exportPdf }

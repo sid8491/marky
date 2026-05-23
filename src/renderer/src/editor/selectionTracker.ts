@@ -12,9 +12,7 @@ export interface SelectionInfo {
   centerX: number
 }
 
-export function selectionTrackerExtension(
-  cb: (info: SelectionInfo | null) => void
-) {
+export function selectionTrackerExtension(cb: (info: SelectionInfo | null) => void) {
   return EditorView.updateListener.of((update) => {
     if (
       !update.selectionSet &&
@@ -47,8 +45,7 @@ export function selectionTrackerExtension(
       text,
       top: Math.min(fromCoords.top, toCoords.top) - container.top,
       bottom: Math.max(fromCoords.bottom, toCoords.bottom) - container.top,
-      centerX:
-        (fromCoords.left + toCoords.left) / 2 - container.left
+      centerX: (fromCoords.left + toCoords.left) / 2 - container.left
     })
   })
 }

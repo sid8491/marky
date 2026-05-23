@@ -48,8 +48,8 @@ export function EmptyState(): React.ReactElement {
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">Welcome to Marky</h1>
           <p className="text-sm text-muted">
-            A beautiful markdown editor with AI assistance. Open a file or start
-            writing — your words look good in any light.
+            A beautiful markdown editor with AI assistance. Open a file or start writing —
+            your words look good in any light.
           </p>
         </div>
         <div className="flex gap-2">
@@ -69,9 +69,7 @@ export function EmptyState(): React.ReactElement {
           >
             <FolderOpen className="size-4" />
             Open file
-            <kbd className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">
-              Ctrl O
-            </kbd>
+            <kbd className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-xs">Ctrl O</kbd>
           </button>
         </div>
 
@@ -90,9 +88,7 @@ export function EmptyState(): React.ReactElement {
                     title={r.path}
                   >
                     <span className="truncate text-default">{r.title}</span>
-                    <span className="ml-auto truncate text-xs text-faint">
-                      {r.path}
-                    </span>
+                    <span className="ml-auto truncate text-xs text-faint">{r.path}</span>
                   </button>
                 </li>
               ))}
@@ -101,8 +97,8 @@ export function EmptyState(): React.ReactElement {
         )}
 
         <p className="mt-2 text-xs text-faint">
-          Press <kbd className="rounded bg-panel px-1.5 py-0.5">Ctrl K</kbd> for
-          the command palette
+          Press <kbd className="rounded bg-panel px-1.5 py-0.5">Ctrl K</kbd> for the
+          command palette
         </p>
       </motion.div>
     </div>

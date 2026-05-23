@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(dir D:\\\\work\\\\develop\\\\marky *)"
-    ]
+    "allow": ["Bash(dir D:\\\\work\\\\develop\\\\marky *)"]
   }
 }

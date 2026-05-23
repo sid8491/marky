@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { X, Check, AlertTriangle, Trash2, Loader2 } from 'lucide-react'
 import { useAi } from '@/store/ai'
@@ -89,17 +89,16 @@ export function SettingsModal(): React.ReactElement {
                   <Select
                     value={settings.provider}
                     onChange={(v) => void setProvider(v as AIProvider)}
-                    options={(Object.keys(PROVIDER_LABELS) as AIProvider[]).map(
-                      (p) => ({ value: p, label: PROVIDER_LABELS[p] })
-                    )}
+                    options={(Object.keys(PROVIDER_LABELS) as AIProvider[]).map((p) => ({
+                      value: p,
+                      label: PROVIDER_LABELS[p]
+                    }))}
                   />
                 </Field>
                 <Field label={`Model · ${PROVIDER_LABELS[settings.provider]}`}>
                   <input
                     value={settings.models[settings.provider]}
-                    onChange={(e) =>
-                      void setModel(settings.provider, e.target.value)
-                    }
+                    onChange={(e) => void setModel(settings.provider, e.target.value)}
                     className="w-full rounded-md border border-subtle bg-panel px-3 py-1.5 text-sm focus:border-strong focus:outline-none"
                     placeholder="model name"
                   />
@@ -112,9 +111,7 @@ export function SettingsModal(): React.ReactElement {
                       max={1}
                       step={0.05}
                       value={settings.temperature}
-                      onChange={(e) =>
-                        void setTemperature(parseFloat(e.target.value))
-                      }
+                      onChange={(e) => void setTemperature(parseFloat(e.target.value))}
                       className="flex-1 accent-accent"
                     />
                     <span className="w-10 text-right font-mono text-xs text-muted">
@@ -133,9 +130,8 @@ export function SettingsModal(): React.ReactElement {
 
               <Section title="API keys">
                 <p className="mb-3 text-xs text-faint">
-                  Keys are encrypted with your OS keychain (DPAPI / Keychain /
-                  libsecret) — they never leave your machine and the renderer
-                  never sees them.
+                  Keys are encrypted with your OS keychain (DPAPI / Keychain / libsecret)
+                  — they never leave your machine and the renderer never sees them.
                 </p>
                 {(Object.keys(PROVIDER_LABELS) as AIProvider[]).map((p) => (
                   <KeyRow
@@ -250,9 +246,7 @@ function Toggle({
           )}
         />
       </button>
-      {description && (
-        <span className="text-xs text-muted">{description}</span>
-      )}
+      {description && <span className="text-xs text-muted">{description}</span>}
     </div>
   )
 }
@@ -271,13 +265,12 @@ function KeyRow({
   onTest: () => Promise<{ ok: boolean; error?: string }>
 }): React.ReactElement {
   const [input, setInput] = useState('')
-  const [editing, setEditing] = useState(!keySet)
+  const [editingOverride, setEditingOverride] = useState(false)
   const [testing, setTesting] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
 
-  useEffect(() => {
-    if (!keySet) setEditing(true)
-  }, [keySet])
+  // Show the input when either the user clicked "Replace" or no key is set yet.
+  const editing = editingOverride || !keySet
 
   const isOllama = provider === 'ollama'
 
@@ -285,7 +278,7 @@ function KeyRow({
     if (!input.trim()) return
     await onSave(input.trim())
     setInput('')
-    setEditing(false)
+    setEditingOverride(false)
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 1500)
   }
@@ -322,13 +315,9 @@ function KeyRow({
                 key set
               </span>
             )}
-            {savedFlash && (
-              <span className="text-xs text-accent">saved</span>
-            )}
+            {savedFlash && <span className="text-xs text-accent">saved</span>}
           </div>
-          <div className="mt-0.5 text-xs text-faint">
-            {PROVIDER_HINTS[provider]}
-          </div>
+          <div className="mt-0.5 text-xs text-faint">{PROVIDER_HINTS[provider]}</div>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -348,7 +337,7 @@ function KeyRow({
           {!isOllama && keySet && !editing && (
             <>
               <button
-                onClick={() => setEditing(true)}
+                onClick={() => setEditingOverride(true)}
                 className="rounded-md px-2 py-1 text-xs text-muted hover:bg-elevated hover:text-default"
               >
                 Replace
@@ -386,7 +375,7 @@ function KeyRow({
           {keySet && (
             <button
               onClick={() => {
-                setEditing(false)
+                setEditingOverride(false)
                 setInput('')
               }}
               className="rounded-md px-3 py-1.5 text-xs text-muted hover:bg-elevated hover:text-default"

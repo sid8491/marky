@@ -49,9 +49,24 @@ const baseTheme = (dark: boolean): ReturnType<typeof EditorView.theme> =>
 
 const mdHighlight = (dark: boolean): HighlightStyle =>
   HighlightStyle.define([
-    { tag: t.heading1, fontSize: '1.6em', fontWeight: '700', color: dark ? '#fff' : '#0f1017' },
-    { tag: t.heading2, fontSize: '1.4em', fontWeight: '700', color: dark ? '#fff' : '#0f1017' },
-    { tag: t.heading3, fontSize: '1.2em', fontWeight: '600', color: dark ? '#fff' : '#0f1017' },
+    {
+      tag: t.heading1,
+      fontSize: '1.6em',
+      fontWeight: '700',
+      color: dark ? '#fff' : '#0f1017'
+    },
+    {
+      tag: t.heading2,
+      fontSize: '1.4em',
+      fontWeight: '700',
+      color: dark ? '#fff' : '#0f1017'
+    },
+    {
+      tag: t.heading3,
+      fontSize: '1.2em',
+      fontWeight: '600',
+      color: dark ? '#fff' : '#0f1017'
+    },
     { tag: [t.heading4, t.heading5, t.heading6], fontWeight: '600' },
     { tag: t.strong, fontWeight: '700', color: dark ? '#fff' : '#0f1017' },
     { tag: t.emphasis, fontStyle: 'italic' },

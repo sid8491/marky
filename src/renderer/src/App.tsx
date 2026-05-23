@@ -14,6 +14,7 @@ import { useAi } from '@/store/ai'
 import { useFileCommands } from '@/hooks/useFileCommands'
 import { useViewShortcuts } from '@/hooks/useViewShortcuts'
 import { useFileWatching } from '@/hooks/useFileWatching'
+import { useUpdates } from '@/hooks/useUpdates'
 
 export function App(): React.ReactElement {
   const tabs = useTabs((s) => s.tabs)
@@ -25,6 +26,7 @@ export function App(): React.ReactElement {
   useFileCommands()
   useViewShortcuts()
   useFileWatching()
+  useUpdates()
 
   useEffect(() => {
     applyTheme()

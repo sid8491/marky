@@ -11,7 +11,12 @@ export function TabBar(): React.ReactElement {
   return (
     <div className="app-no-drag flex h-full items-stretch overflow-x-auto">
       {tabs.map((t) => (
-        <TabItem key={t.id} tab={t} active={t.id === activeId} onClick={() => setActive(t.id)} />
+        <TabItem
+          key={t.id}
+          tab={t}
+          active={t.id === activeId}
+          onClick={() => setActive(t.id)}
+        />
       ))}
       <button
         onClick={() => newTab()}
@@ -70,9 +75,7 @@ function TabItem({
       >
         <X className="size-3" />
       </button>
-      {active && (
-        <span className="absolute inset-x-0 bottom-0 h-px bg-accent" />
-      )}
+      {active && <span className="absolute inset-x-0 bottom-0 h-px bg-accent" />}
     </div>
   )
 }

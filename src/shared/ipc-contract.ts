@@ -4,12 +4,15 @@ import type {
   SaveDialogResult,
   ExportPdfOptions
 } from './types'
-import type {
-  AIChatRequest,
-  AIProvider,
-  AISettings,
-  AIStreamEvent
-} from './ai'
+import type { AIChatRequest, AIProvider, AISettings, AIStreamEvent } from './ai'
+
+export type UpdateEvent =
+  | { type: 'checking' }
+  | { type: 'available'; version: string }
+  | { type: 'not-available' }
+  | { type: 'downloading'; percent: number }
+  | { type: 'downloaded'; version: string }
+  | { type: 'error'; message: string }
 
 export type Platform =
   | 'aix'
@@ -47,6 +50,11 @@ export const IPC = {
 
   // export
   EXPORT_PDF: 'export:pdf',
+
+  // updates
+  UPDATE_EVENT: 'update:event',
+  UPDATE_INSTALL: 'update:install',
+  UPDATE_CHECK: 'update:check',
 
   // ai
   AI_SETTINGS_GET: 'ai:settings:get',
@@ -87,11 +95,15 @@ export interface MarkyApi {
 
   exportPdf: (opts: ExportPdfOptions) => Promise<{ canceled: boolean; path?: string }>
 
+  updates: {
+    check: () => void
+    install: () => void
+    onEvent: (cb: (event: UpdateEvent) => void) => () => void
+  }
+
   ai: {
     getSettings: () => Promise<AISettings>
-    setSettings: (
-      partial: Partial<Omit<AISettings, 'keys'>>
-    ) => Promise<AISettings>
+    setSettings: (partial: Partial<Omit<AISettings, 'keys'>>) => Promise<AISettings>
     setKey: (provider: AIProvider, key: string) => Promise<AISettings>
     deleteKey: (provider: AIProvider) => Promise<AISettings>
     test: (provider: AIProvider) => Promise<{ ok: boolean; error?: string }>

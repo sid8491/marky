@@ -14,10 +14,7 @@ const MD_FILTERS = [
 const watchers = new Map<string, FSWatcher>()
 
 async function readFile(path: string): Promise<FileReadResult> {
-  const [content, stat] = await Promise.all([
-    fs.readFile(path, 'utf8'),
-    fs.stat(path)
-  ])
+  const [content, stat] = await Promise.all([fs.readFile(path, 'utf8'), fs.stat(path)])
   return { path, content, mtimeMs: stat.mtimeMs }
 }
 

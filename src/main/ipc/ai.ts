@@ -1,17 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { IPC } from '@shared/ipc-contract'
-import type {
-  AIChatRequest,
-  AIProvider,
-  AIStreamEvent
-} from '@shared/ai'
-import {
-  deleteKey,
-  getKey,
-  getSettings,
-  setKey,
-  updateSettings
-} from '../ai/settings'
+import type { AIChatRequest, AIProvider, AIStreamEvent } from '@shared/ai'
+import { deleteKey, getKey, getSettings, setKey, updateSettings } from '../ai/settings'
 import { streamAnthropic, testAnthropic } from '../ai/anthropic'
 import { streamOpenAI, testOpenAI } from '../ai/openai'
 import { streamGoogle, testGoogle } from '../ai/google'
@@ -49,14 +39,11 @@ export function registerAiIpc(getMainWindow: () => BrowserWindow | null): void {
 
   ipcMain.handle(IPC.AI_SETTINGS_SET, (_e, partial) => updateSettings(partial))
 
-  ipcMain.handle(
-    IPC.AI_KEY_SET,
-    (_e, provider: AIProvider, key: string) => setKey(provider, key)
+  ipcMain.handle(IPC.AI_KEY_SET, (_e, provider: AIProvider, key: string) =>
+    setKey(provider, key)
   )
 
-  ipcMain.handle(IPC.AI_KEY_DELETE, (_e, provider: AIProvider) =>
-    deleteKey(provider)
-  )
+  ipcMain.handle(IPC.AI_KEY_DELETE, (_e, provider: AIProvider) => deleteKey(provider))
 
   ipcMain.handle(IPC.AI_TEST, async (_e, provider: AIProvider) => {
     try {
@@ -76,39 +63,36 @@ export function registerAiIpc(getMainWindow: () => BrowserWindow | null): void {
     }
   })
 
-  ipcMain.handle(
-    IPC.AI_STREAM_START,
-    async (_e, id: string, request: AIChatRequest) => {
-      if (inflight.has(id)) {
-        return { accepted: false as const, error: 'duplicate id' }
-      }
-      const ac = new AbortController()
-      inflight.set(id, ac)
-      // run async, send events
-      void (async () => {
-        const send = (event: AIStreamEvent): void => {
-          getMainWindow()?.webContents.send(IPC.AI_STREAM_EVENT, id, event)
-        }
-        try {
-          const gen = await getProviderStream(request)
-          for await (const text of gen(ac.signal)) {
-            if (ac.signal.aborted) break
-            send({ type: 'chunk', text })
-          }
-          if (ac.signal.aborted) {
-            send({ type: 'error', message: 'cancelled' })
-          } else {
-            send({ type: 'done' })
-          }
-        } catch (e) {
-          send({ type: 'error', message: (e as Error).message ?? String(e) })
-        } finally {
-          inflight.delete(id)
-        }
-      })()
-      return { accepted: true as const }
+  ipcMain.handle(IPC.AI_STREAM_START, async (_e, id: string, request: AIChatRequest) => {
+    if (inflight.has(id)) {
+      return { accepted: false as const, error: 'duplicate id' }
     }
-  )
+    const ac = new AbortController()
+    inflight.set(id, ac)
+    // run async, send events
+    void (async () => {
+      const send = (event: AIStreamEvent): void => {
+        getMainWindow()?.webContents.send(IPC.AI_STREAM_EVENT, id, event)
+      }
+      try {
+        const gen = await getProviderStream(request)
+        for await (const text of gen(ac.signal)) {
+          if (ac.signal.aborted) break
+          send({ type: 'chunk', text })
+        }
+        if (ac.signal.aborted) {
+          send({ type: 'error', message: 'cancelled' })
+        } else {
+          send({ type: 'done' })
+        }
+      } catch (e) {
+        send({ type: 'error', message: (e as Error).message ?? String(e) })
+      } finally {
+        inflight.delete(id)
+      }
+    })()
+    return { accepted: true as const }
+  })
 
   ipcMain.on(IPC.AI_STREAM_CANCEL, (_e, id: string) => {
     const ac = inflight.get(id)

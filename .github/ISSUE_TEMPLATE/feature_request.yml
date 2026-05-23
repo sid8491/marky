@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest a new feature or improvement.
+title: '[feat] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please scan existing issues and the [README roadmap](https://github.com/sid8491/marky#roadmap). For larger features, consider opening a [Discussion](https://github.com/sid8491/marky/discussions) first.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem?
+      description: What are you trying to do, and what's making it hard today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch the feature. UI mockups, command names, keybindings, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workarounds, other approaches, prior art in other editors.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Where does this fit?
+      multiple: true
+      options:
+        - Editor
+        - Preview / render
+        - AI features
+        - PDF export
+        - File / tabs
+        - Settings / shortcuts
+        - Build / distribution
+        - Other
