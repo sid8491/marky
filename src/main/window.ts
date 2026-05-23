@@ -1,6 +1,17 @@
-import { BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+
+function resolveWindowIcon(): string | undefined {
+  // Production builds bake the icon into the executable via electron-builder.
+  // For dev, point at the source PNG so the taskbar/dock shows the right art.
+  if (is.dev) {
+    const devIcon = join(app.getAppPath(), 'build/icons/256x256.png')
+    return existsSync(devIcon) ? devIcon : undefined
+  }
+  return undefined
+}
 
 export function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -11,6 +22,7 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     frame: false,
+    icon: resolveWindowIcon(),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     // No titleBarOverlay — we render the min/max/close controls ourselves
     // in React (see components/TitleBar.tsx). Having both creates duplicate

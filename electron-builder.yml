@@ -6,13 +6,17 @@ files:
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CONTRIBUTING.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{eslint.config.mjs,.prettierrc.json,.prettierignore,.gitattributes}'
+  - '!marky.png'
+  - '!build/**'
 asarUnpack:
   - resources/**
 win:
   executableName: Marky
+  icon: build/icons/icon.ico
   target:
     - target: nsis
       arch:
@@ -24,6 +28,7 @@ nsis:
   createDesktopShortcut: always
 mac:
   category: public.app-category.productivity
+  icon: build/icons/icon.icns
   # Code signing and notarization disabled until credentials are available.
   # Users will see Gatekeeper warnings on first launch; see README for the bypass.
   identity: null
@@ -34,6 +39,7 @@ mac:
         - arm64
         - x64
 linux:
+  icon: build/icons
   target:
     - AppImage
   category: Office
