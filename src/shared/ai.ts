@@ -38,7 +38,10 @@ export const DEFAULT_AI_SETTINGS: Omit<AISettings, 'keys'> = {
     ollama: 'llama3.1'
   },
   temperature: 0.5,
-  ghostTextEnabled: true,
+  // Opt-in: AI continuations are only produced on explicit user request
+  // (Ctrl/Cmd+J, command palette, or selection refine toolbar) unless this
+  // is turned on in settings.
+  ghostTextEnabled: false,
   ghostTextDebounceMs: 600,
   ollamaUrl: 'http://localhost:11434'
 }

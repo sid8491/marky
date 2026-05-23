@@ -119,11 +119,11 @@ export function SettingsModal(): React.ReactElement {
                     </span>
                   </div>
                 </Field>
-                <Field label="Inline ghost-text completion">
+                <Field label="Auto-suggest as I type">
                   <Toggle
                     checked={settings.ghostTextEnabled}
                     onChange={(v) => void setGhostText(v)}
-                    description="Suggests continuations as you type. Press Tab to accept."
+                    description="When on, an AI continuation appears as gray ghost-text after you pause typing. Press Tab to accept, Esc to dismiss. Off by default — use Ctrl+J or the command palette to request a suggestion manually."
                   />
                 </Field>
               </Section>

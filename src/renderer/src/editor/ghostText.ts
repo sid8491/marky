@@ -20,7 +20,6 @@ class GhostWidget extends WidgetType {
   toDOM(): HTMLElement {
     const span = document.createElement('span')
     span.className = 'cm-ghost-text'
-    // preserve leading/trailing whitespace
     span.textContent = this.text
     return span
   }
@@ -41,7 +40,7 @@ const ghostField = StateField.define<Ghost | null>({
       if (e.is(setGhostEffect)) return e.value
     }
     if (tr.docChanged || tr.selection) {
-      // any user input dismisses the suggestion; the plugin schedules a fresh one
+      // any user input dismisses the suggestion
       return null
     }
     return value
@@ -77,6 +76,88 @@ function acceptGhost(view: EditorView): boolean {
   return true
 }
 
+function trimTrailingFences(s: string): string {
+  return s.replace(/^[ \t]*```[^\n]*\n?/, '').replace(/```\s*$/, '')
+}
+
+/**
+ * Fetch an AI continuation at the current cursor and show it as ghost-text.
+ * Public API: call this in response to an explicit user request (shortcut,
+ * command palette, etc.). Returns true if a request was started.
+ */
+export function requestGhostText(view: EditorView): boolean {
+  const settings = useAi.getState().settings
+  if (!settings) return false
+
+  const state = view.state
+  const sel = state.selection.main
+  if (!sel.empty) return false
+  const pos = sel.head
+  const doc = state.doc
+  if (doc.length < MIN_TRIGGER_LENGTH) return false
+
+  const from = Math.max(0, pos - CONTEXT_BYTES)
+  const context = doc.sliceString(from, pos)
+  if (!context.trim()) return false
+
+  const request = buildContinueRequest({
+    provider: settings.provider,
+    model: settings.models[settings.provider],
+    temperature: 0.3,
+    context
+  })
+
+  let accumulated = ''
+  const startedPos = pos
+  let handle: AIStreamHandle | null = null
+  handle = startStream(request, (event) => {
+    if (event.type === 'chunk') {
+      accumulated += event.text
+      if (accumulated.length > MAX_SUGGEST_LENGTH) {
+        handle?.cancel()
+        handle = null
+      }
+      const current = view.state.selection.main
+      if (current.head !== startedPos || !current.empty) return
+      const trimmed = trimTrailingFences(accumulated)
+      if (!trimmed) return
+      view.dispatch({
+        effects: setGhostEffect.of({ text: trimmed, pos: startedPos })
+      })
+    } else if (event.type === 'done' || event.type === 'error') {
+      handle = null
+    }
+  })
+  return true
+}
+
+class AutoScheduler {
+  private timer: ReturnType<typeof setTimeout> | null = null
+
+  schedule(view: EditorView): void {
+    this.cancel()
+    const settings = useAi.getState().settings
+    if (!settings?.ghostTextEnabled) return
+
+    this.timer = setTimeout(() => {
+      const state = view.state
+      const sel = state.selection.main
+      if (!sel.empty) return
+      // Only at end of a non-empty line — avoids interrupting mid-word.
+      const line = state.doc.lineAt(sel.head)
+      if (sel.head !== line.to || !line.text.trim()) return
+      requestGhostText(view)
+    }, settings.ghostTextDebounceMs)
+  }
+
+  cancel(): void {
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+  }
+}
+
 const ghostKeymap = keymap.of([
   {
     key: 'Tab',
@@ -89,90 +170,16 @@ const ghostKeymap = keymap.of([
       clearGhost(view)
       return true
     }
+  },
+  {
+    // Manual trigger — fires regardless of the auto-suggest setting.
+    key: 'Mod-j',
+    run: (view) => requestGhostText(view)
   }
 ])
 
-class GhostFetcher {
-  private inflight: AIStreamHandle | null = null
-  private timer: ReturnType<typeof setTimeout> | null = null
-
-  schedule(view: EditorView): void {
-    this.cancel()
-    const settings = useAi.getState().settings
-    if (!settings || !settings.ghostTextEnabled) return
-    const debounce = settings.ghostTextDebounceMs
-
-    this.timer = setTimeout(() => {
-      void this.run(view)
-    }, debounce)
-  }
-
-  cancel(): void {
-    if (this.timer) {
-      clearTimeout(this.timer)
-      this.timer = null
-    }
-    if (this.inflight) {
-      this.inflight.cancel()
-      this.inflight = null
-    }
-  }
-
-  private async run(view: EditorView): Promise<void> {
-    const settings = useAi.getState().settings
-    if (!settings || !settings.ghostTextEnabled) return
-
-    const state = view.state
-    const sel = state.selection.main
-    if (!sel.empty) return
-    const pos = sel.head
-    const doc = state.doc
-    if (doc.length < MIN_TRIGGER_LENGTH) return
-    // Only suggest at end of a non-empty line; avoids interrupting mid-word.
-    const line = doc.lineAt(pos)
-    if (pos !== line.to) return
-    if (!line.text.trim()) return
-
-    const from = Math.max(0, pos - CONTEXT_BYTES)
-    const context = doc.sliceString(from, pos)
-
-    const request = buildContinueRequest({
-      provider: settings.provider,
-      model: settings.models[settings.provider],
-      temperature: 0.3,
-      context
-    })
-
-    let accumulated = ''
-    const startedPos = pos
-    this.inflight = startStream(request, (event) => {
-      if (event.type === 'chunk') {
-        accumulated += event.text
-        if (accumulated.length > MAX_SUGGEST_LENGTH) {
-          this.inflight?.cancel()
-          this.inflight = null
-        }
-        // Make sure the cursor hasn't moved before showing
-        const current = view.state.selection.main
-        if (current.head !== startedPos || !current.empty) return
-        const trimmed = trimTrailingFences(accumulated)
-        if (!trimmed) return
-        view.dispatch({
-          effects: setGhostEffect.of({ text: trimmed, pos: startedPos })
-        })
-      } else if (event.type === 'done' || event.type === 'error') {
-        this.inflight = null
-      }
-    })
-  }
-}
-
-function trimTrailingFences(s: string): string {
-  return s.replace(/^[ \t]*```[^\n]*\n?/, '').replace(/```\s*$/, '')
-}
-
 export function ghostTextExtension(): Extension {
-  const fetcher = new GhostFetcher()
+  const scheduler = new AutoScheduler()
   return [
     ghostField,
     ghostKeymap,
@@ -180,12 +187,16 @@ export function ghostTextExtension(): Extension {
       class {
         constructor(readonly view: EditorView) {}
         update(update: import('@codemirror/view').ViewUpdate): void {
-          if (update.docChanged || update.selectionSet) {
-            fetcher.schedule(this.view)
+          // Only schedule on actual typing, never on cursor moves alone.
+          // requestGhostText() is the explicit-trigger path.
+          if (update.docChanged) {
+            scheduler.schedule(this.view)
+          } else if (update.selectionSet) {
+            scheduler.cancel()
           }
         }
         destroy(): void {
-          fetcher.cancel()
+          scheduler.cancel()
         }
       }
     ),

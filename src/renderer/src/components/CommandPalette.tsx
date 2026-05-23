@@ -14,6 +14,7 @@ import {
   FileText,
   Hash,
   ArrowDownUp,
+  Sparkles,
   type LucideIcon
 } from 'lucide-react'
 import { useTabs } from '@/store/tabs'
@@ -21,12 +22,15 @@ import { useSettings } from '@/store/settings'
 import { useRecent } from '@/store/recent'
 import { useFileCommands } from '@/hooks/useFileCommands'
 import { cn } from '@/lib/cn'
+import { getActiveEditorView } from '@/editor/activeView'
+import { requestGhostText } from '@/editor/ghostText'
+import { toast } from '@/store/toasts'
 
 interface Command {
   id: string
   label: string
   hint?: string
-  group: 'File' | 'View' | 'Theme' | 'Recent'
+  group: 'File' | 'View' | 'Theme' | 'AI' | 'Recent'
   shortcut?: string
   icon: LucideIcon
   run: () => void | Promise<void>
@@ -187,6 +191,28 @@ export function CommandPalette(): React.ReactElement {
         group: 'Theme',
         icon: Monitor,
         run: () => setTheme('system')
+      },
+      {
+        id: 'ai.continue',
+        label: 'AI: Suggest continuation at cursor',
+        group: 'AI',
+        shortcut: 'Ctrl J',
+        icon: Sparkles,
+        run: () => {
+          const view = getActiveEditorView()
+          if (!view) {
+            toast('No active editor', { kind: 'info' })
+            return
+          }
+          view.focus()
+          const ok = requestGhostText(view)
+          if (!ok) {
+            toast('Nothing to continue from', {
+              description: 'Place the cursor at the end of some text first.',
+              kind: 'info'
+            })
+          }
+        }
       },
       ...recent.slice(0, 8).map<Command>((r) => ({
         id: `recent:${r.path}`,

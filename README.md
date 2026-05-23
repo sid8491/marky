@@ -9,8 +9,8 @@ A beautiful cross-platform Markdown editor with first-class AI assistance and pi
 ## Highlights
 
 - **Multi-tab editor** with side-by-side editor/preview, draggable split, `*` dirty indicator, drag-reorder, middle-click close.
-- **AI-native writing**
-  - Inline ghost-text completion (Copilot-style). Press `Tab` to accept.
+- **AI-native writing** — invoked explicitly, never intrusively.
+  - On-demand continuation: press `Ctrl+J` (or use the command palette) to request an AI continuation at the cursor. `Tab` accepts, `Esc` dismisses. Optional auto-suggest as-you-type is available in Settings.
   - Selection refine toolbar (Gmail-style): Rewrite / Shorter / Longer / Grammar / Continue / Tone / Ask AI.
   - Streaming Accept / Reject / Try-again flow.
   - Provider abstraction over **Anthropic, OpenAI, Google, and Ollama** — bring your own key.
@@ -117,22 +117,23 @@ The Electron window opens with HMR enabled. Press `Ctrl+K` for the command palet
 
 ## Keyboard shortcuts
 
-| Shortcut         | Action                        |
-| ---------------- | ----------------------------- |
-| `Ctrl+N`         | New file                      |
-| `Ctrl+O`         | Open file                     |
-| `Ctrl+S`         | Save                          |
-| `Ctrl+Shift+S`   | Save as                       |
-| `Ctrl+W`         | Close active tab              |
-| `Ctrl+E`         | Export to PDF                 |
-| `Ctrl+K`         | Command palette               |
-| `Ctrl+,`         | Settings                      |
-| `Ctrl+F`         | Find in editor                |
-| `Ctrl+\`         | Toggle split view             |
-| `Ctrl+Shift+E`   | Editor only                   |
-| `Ctrl+Shift+V`   | Preview only                  |
-| `Tab` _(editor)_ | Accept ghost-text suggestion  |
-| `Esc` _(editor)_ | Dismiss ghost-text suggestion |
+| Shortcut         | Action                            |
+| ---------------- | --------------------------------- |
+| `Ctrl+N`         | New file                          |
+| `Ctrl+O`         | Open file                         |
+| `Ctrl+S`         | Save                              |
+| `Ctrl+Shift+S`   | Save as                           |
+| `Ctrl+W`         | Close active tab                  |
+| `Ctrl+E`         | Export to PDF                     |
+| `Ctrl+K`         | Command palette                   |
+| `Ctrl+,`         | Settings                          |
+| `Ctrl+F`         | Find in editor                    |
+| `Ctrl+\`         | Toggle split view                 |
+| `Ctrl+Shift+E`   | Editor only                       |
+| `Ctrl+Shift+V`   | Preview only                      |
+| `Ctrl+J`         | Request AI continuation at cursor |
+| `Tab` _(editor)_ | Accept ghost-text suggestion      |
+| `Esc` _(editor)_ | Dismiss ghost-text suggestion     |
 
 On macOS, substitute `Cmd` for `Ctrl`.
 

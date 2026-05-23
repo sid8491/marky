@@ -34,6 +34,7 @@ import {
   scrollFraction,
   subscribeScroll
 } from '@/editor/scrollSync'
+import { setActiveEditorView } from '@/editor/activeView'
 import { SelectionToolbar } from './SelectionToolbar'
 
 export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
@@ -88,6 +89,7 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
 
     const view = new EditorView({ state, parent: hostRef.current })
     viewRef.current = view
+    setActiveEditorView(view)
 
     const scrollDom = view.scrollDOM
     let receivingProgrammaticScroll = false
@@ -112,6 +114,7 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
     return () => {
       scrollDom.removeEventListener('scroll', onScroll)
       unsubscribeScroll()
+      setActiveEditorView(null)
       view.destroy()
       viewRef.current = null
       setSelectionInfo(null)

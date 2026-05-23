@@ -1,6 +1,6 @@
 {
   "name": "marky",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A beautiful cross-platform markdown editor with AI",
   "main": "./out/main/index.js",
   "author": "",
