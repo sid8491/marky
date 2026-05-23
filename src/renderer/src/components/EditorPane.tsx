@@ -1,0 +1,115 @@
+import { useEffect, useRef, useState } from 'react'
+import { EditorState } from '@codemirror/state'
+import {
+  EditorView,
+  keymap,
+  highlightActiveLine,
+  drawSelection,
+  lineNumbers
+} from '@codemirror/view'
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab
+} from '@codemirror/commands'
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
+import {
+  closeBrackets,
+  closeBracketsKeymap,
+  autocompletion,
+  completionKeymap
+} from '@codemirror/autocomplete'
+import { indentOnInput, bracketMatching } from '@codemirror/language'
+import { useTabs, type Tab } from '@/store/tabs'
+import { useSettings } from '@/store/settings'
+import { markyTheme } from '@/editor/theme'
+import { imagePasteExtension } from '@/editor/imagePaste'
+import { ghostTextExtension } from '@/editor/ghostText'
+import {
+  selectionTrackerExtension,
+  type SelectionInfo
+} from '@/editor/selectionTracker'
+import { SelectionToolbar } from './SelectionToolbar'
+
+export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const viewRef = useRef<EditorView | null>(null)
+  const updateContent = useTabs((s) => s.updateContent)
+  const dark = useSettings((s) => s.resolvedDark)
+  const showLineNumbers = useSettings((s) => s.showLineNumbers)
+  const [selectionInfo, setSelectionInfo] = useState<SelectionInfo | null>(null)
+
+  useEffect(() => {
+    if (!hostRef.current) return
+
+    const state = EditorState.create({
+      doc: tab.content,
+      extensions: [
+        history(),
+        drawSelection(),
+        highlightActiveLine(),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion(),
+        indentOnInput(),
+        highlightSelectionMatches(),
+        ...(showLineNumbers ? [lineNumbers()] : []),
+        EditorView.lineWrapping,
+        keymap.of([
+          indentWithTab,
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...historyKeymap,
+          ...searchKeymap,
+          ...completionKeymap
+        ]),
+        markdown({ base: markdownLanguage, codeLanguages: () => null }),
+        imagePasteExtension({
+          getDocPath: () => {
+            const current = useTabs.getState().tabs.find((t) => t.id === tab.id)
+            return current?.path
+          }
+        }),
+        ghostTextExtension(),
+        selectionTrackerExtension(setSelectionInfo),
+        ...markyTheme(dark),
+        EditorView.updateListener.of((u) => {
+          if (u.docChanged) {
+            updateContent(tab.id, u.state.doc.toString())
+          }
+        })
+      ]
+    })
+
+    const view = new EditorView({ state, parent: hostRef.current })
+    viewRef.current = view
+
+    return () => {
+      view.destroy()
+      viewRef.current = null
+      setSelectionInfo(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab.id, dark, showLineNumbers])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    const current = view.state.doc.toString()
+    if (current !== tab.content) {
+      view.dispatch({
+        changes: { from: 0, to: current.length, insert: tab.content }
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab.content])
+
+  return (
+    <div className="relative h-full w-full">
+      <div ref={hostRef} className="allow-select h-full w-full overflow-auto" />
+      <SelectionToolbar info={selectionInfo} viewRef={viewRef} />
+    </div>
+  )
+}

@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    monospace;
+
+  --color-accent-50: #eef2ff;
+  --color-accent-100: #e0e7ff;
+  --color-accent-200: #c7d2fe;
+  --color-accent-300: #a5b4fc;
+  --color-accent-400: #818cf8;
+  --color-accent-500: #6366f1;
+  --color-accent-600: #4f46e5;
+  --color-accent-700: #4338ca;
+
+  --color-ink-0: #ffffff;
+  --color-ink-50: #f7f7f8;
+  --color-ink-100: #ebebef;
+  --color-ink-200: #d8d9e0;
+  --color-ink-300: #b4b6c2;
+  --color-ink-400: #888a99;
+  --color-ink-500: #5e6171;
+  --color-ink-600: #3f4252;
+  --color-ink-700: #2a2c39;
+  --color-ink-800: #1a1c26;
+  --color-ink-850: #14151d;
+  --color-ink-900: #0f1017;
+  --color-ink-950: #0b0b0e;
+}
+
+/* light vs dark surface tokens (consumed via tailwind utilities + custom vars) */
+:root {
+  --surface-bg: #ffffff;
+  --surface-panel: #f7f7f8;
+  --surface-elevated: #ffffff;
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --surface-border-strong: rgba(0, 0, 0, 0.14);
+  --surface-text: #1a1c26;
+  --surface-text-muted: #5e6171;
+  --surface-text-faint: #888a99;
+  --surface-accent: #6366f1;
+  --surface-shadow: 0 8px 30px rgba(15, 16, 23, 0.08);
+  color-scheme: light;
+}
+
+html.dark {
+  --surface-bg: #0b0b0e;
+  --surface-panel: #14151d;
+  --surface-elevated: #1a1c26;
+  --surface-border: rgba(255, 255, 255, 0.06);
+  --surface-border-strong: rgba(255, 255, 255, 0.12);
+  --surface-text: #ebebef;
+  --surface-text-muted: #b4b6c2;
+  --surface-text-faint: #888a99;
+  --surface-accent: #818cf8;
+  --surface-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-bg);
+  color: var(--surface-text);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11', 'cv02', 'cv03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+}
+
+/* draggable title bar regions */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* allow text selection inside editor / preview panes */
+.allow-select,
+.allow-select * {
+  user-select: text;
+}
+
+/* subtle scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-text-faint);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* utility classes mapped to vars */
+@layer utilities {
+  .bg-surface {
+    background-color: var(--surface-bg);
+  }
+  .bg-panel {
+    background-color: var(--surface-panel);
+  }
+  .bg-elevated {
+    background-color: var(--surface-elevated);
+  }
+  .text-default {
+    color: var(--surface-text);
+  }
+  .text-muted {
+    color: var(--surface-text-muted);
+  }
+  .text-faint {
+    color: var(--surface-text-faint);
+  }
+  .border-subtle {
+    border-color: var(--surface-border);
+  }
+  .border-strong {
+    border-color: var(--surface-border-strong);
+  }
+  .ring-accent {
+    --tw-ring-color: var(--surface-accent);
+  }
+  .text-accent {
+    color: var(--surface-accent);
+  }
+  .bg-accent {
+    background-color: var(--surface-accent);
+  }
+  .shadow-elevated {
+    box-shadow: var(--surface-shadow);
+  }
+}

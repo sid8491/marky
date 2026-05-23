@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp.*
+
+# Build output
+dist/
+out/
+release/
+build/icons/
+*.tsbuildinfo
+
+# Logs
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Caches
+.cache/
+.vite-inspect/
+.eslintcache
+.parcel-cache/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.cer
+.electron-builder.env
+
+# Editor / IDE
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Coverage
+coverage/
+*.lcov
+
+# Misc
+*.bak
+*.orig
