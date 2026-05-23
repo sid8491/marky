@@ -1,0 +1,38 @@
+# Normalize all text files to LF in the repo, regardless of contributor OS.
+# Prettier is configured with endOfLine: "lf"; this keeps CI consistent.
+* text=auto eol=lf
+
+# Explicit text patterns
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.json      text eol=lf
+*.jsonc     text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.sh        text eol=lf
+
+# Binary files — never touch line endings or diff as text
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.icns      binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.otf       binary
+*.eot       binary
+*.pdf       binary
+*.dmg       binary
+*.exe       binary
+*.AppImage  binary
+*.zip       binary
+*.tar       binary
+*.gz        binary
