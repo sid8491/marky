@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { X, Check, AlertTriangle, Trash2, Loader2 } from 'lucide-react'
+import { X, Check, AlertTriangle, Trash2, Loader2, Download } from 'lucide-react'
 import { useAi } from '@/store/ai'
 import { toast } from '@/store/toasts'
+import { manualCheckForUpdates } from '@/hooks/useUpdates'
 import { cn } from '@/lib/cn'
 import type { AIProvider } from '@shared/ai'
 
@@ -84,6 +85,8 @@ export function SettingsModal(): React.ReactElement {
             </header>
 
             <div className="max-h-[70vh] overflow-y-auto p-5">
+              <AboutSection />
+
               <Section title="AI provider">
                 <Field label="Active provider">
                   <Select
@@ -160,6 +163,51 @@ export function SettingsModal(): React.ReactElement {
         </motion.div>
       )}
     </AnimatePresence>
+  )
+}
+
+function AboutSection(): React.ReactElement {
+  const [version, setVersion] = useState<string | null>(null)
+  const [checking, setChecking] = useState(false)
+
+  useEffect(() => {
+    void window.marky.appVersion().then(setVersion)
+  }, [])
+
+  const handleCheck = (): void => {
+    setChecking(true)
+    manualCheckForUpdates()
+    // The toast lifecycle handles result; clear the local spinner shortly
+    // after the request fires so the button stops looking pending.
+    setTimeout(() => setChecking(false), 1500)
+  }
+
+  return (
+    <section className="mb-6">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
+        About
+      </h3>
+      <div className="flex items-center justify-between rounded-lg border border-subtle bg-panel/50 p-3">
+        <div>
+          <div className="text-sm font-medium text-default">Marky</div>
+          <div className="mt-0.5 font-mono text-xs text-faint">
+            {version ? `v${version}` : 'loading…'}
+          </div>
+        </div>
+        <button
+          onClick={handleCheck}
+          disabled={checking}
+          className="flex items-center gap-2 rounded-md border border-strong bg-elevated px-3 py-1.5 text-xs font-medium text-default transition-colors hover:bg-panel disabled:opacity-60"
+        >
+          {checking ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Download className="size-3.5" />
+          )}
+          Check for updates
+        </button>
+      </div>
+    </section>
   )
 }
 

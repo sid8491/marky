@@ -35,8 +35,9 @@ export const IPC = {
   WIN_IS_MAXIMIZED: 'win:is-maximized',
   WIN_MAXIMIZE_CHANGED: 'win:maximize-changed',
 
-  // platform
+  // platform / app
   PLATFORM: 'app:platform',
+  APP_VERSION: 'app:version',
 
   // file ops
   FILE_OPEN_DIALOG: 'file:open-dialog',
@@ -69,6 +70,7 @@ export const IPC = {
 
 export interface MarkyApi {
   platform: () => Promise<Platform>
+  appVersion: () => Promise<string>
 
   win: {
     minimize: () => void

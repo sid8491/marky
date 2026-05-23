@@ -35,6 +35,8 @@ import {
   subscribeScroll
 } from '@/editor/scrollSync'
 import { setActiveEditorView } from '@/editor/activeView'
+import { md } from '@/editor/markdownCommands'
+import { EditorToolbar } from './EditorToolbar'
 import { SelectionToolbar } from './SelectionToolbar'
 
 export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
@@ -78,7 +80,21 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
           ...defaultKeymap,
           ...historyKeymap,
           ...searchKeymap,
-          ...completionKeymap
+          ...completionKeymap,
+          {
+            key: 'Mod-b',
+            run: (view) => {
+              md.bold(view)
+              return true
+            }
+          },
+          {
+            key: 'Mod-i',
+            run: (view) => {
+              md.italic(view)
+              return true
+            }
+          }
         ]),
         markdown({ base: markdownLanguage, codeLanguages: () => null }),
         imagePasteExtension({
@@ -147,13 +163,16 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
   }, [tab.content])
 
   return (
-    <div ref={wrapperRef} className="relative h-full w-full">
-      <div ref={hostRef} className="allow-select h-full w-full overflow-auto" />
-      <SelectionToolbar
-        info={selectionInfo}
-        viewRef={viewRef}
-        containerWidth={paneWidth}
-      />
+    <div ref={wrapperRef} className="flex h-full w-full flex-col">
+      <EditorToolbar viewRef={viewRef} />
+      <div className="relative min-h-0 flex-1">
+        <div ref={hostRef} className="allow-select h-full w-full overflow-auto" />
+        <SelectionToolbar
+          info={selectionInfo}
+          viewRef={viewRef}
+          containerWidth={paneWidth}
+        />
+      </div>
     </div>
   )
 }

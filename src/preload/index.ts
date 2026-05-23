@@ -10,6 +10,7 @@ import type { AIChatRequest, AIProvider, AISettings, AIStreamEvent } from '@shar
 
 const api = {
   platform: () => ipcRenderer.invoke(IPC.PLATFORM) as Promise<Platform>,
+  appVersion: () => ipcRenderer.invoke(IPC.APP_VERSION) as Promise<string>,
 
   win: {
     minimize: () => ipcRenderer.send(IPC.WIN_MINIMIZE),
