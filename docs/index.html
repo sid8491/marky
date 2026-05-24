@@ -774,46 +774,46 @@
           <div class="diagram">
             <pre class="mermaid">
 flowchart TB
-  classDef main fill:#1a1c26,stroke:#818cf8,stroke-width:1.5px,color:#ebebef
-  classDef preload fill:#1a1c26,stroke:#fcd34d,stroke-width:1.5px,color:#ebebef
-  classDef renderer fill:#1a1c26,stroke:#86efac,stroke-width:1.5px,color:#ebebef
-  classDef external fill:#0e1018,stroke:#888a99,stroke-dasharray:4 4,color:#b4b6c2
-
-  subgraph Main["Main Process — Node.js (privileged)"]
+  subgraph Main["Main Process - Node.js"]
     direction TB
     Window["BrowserWindow<br/>frameless"]
-    FileIO["File I/O<br/>open/save/watch"]
+    FileIO["File I/O<br/>open · save · watch"]
     PDFGen["PDF Export<br/>printToPDF"]
     AIRouter["AI Router<br/>4 providers"]
-    Updater["electron-updater<br/>auto-update"]
+    Updater["electron-updater"]
     Vault["safeStorage<br/>OS keychain"]
   end
 
-  subgraph Preload["Preload — contextBridge"]
-    Bridge["window.marky<br/>typed surface"]
+  subgraph Preload["Preload bridge"]
+    Bridge["window.marky<br/>typed contextBridge surface"]
   end
 
-  subgraph Renderer["Renderer — Chromium (sandboxed)"]
+  subgraph Renderer["Renderer - Chromium sandbox"]
     direction TB
     React["React 19 UI"]
     CM["CodeMirror 6<br/>editor + extensions"]
-    Pipeline["unified pipeline<br/>remark → rehype<br/>Shiki, KaTeX, Mermaid"]
-    Stores["Zustand stores<br/>tabs · settings · ai · recent · toasts"]
+    Pipeline["unified pipeline<br/>remark · rehype<br/>Shiki · KaTeX · Mermaid"]
+    Stores["Zustand stores"]
   end
 
-  Renderer -- "ipcRenderer.invoke/send" --> Bridge
-  Bridge -- "ipcMain.handle/on" --> Main
+  React --> Bridge
+  CM --> Bridge
+  Stores --> Bridge
+  Bridge --> FileIO
+  Bridge --> AIRouter
+  Bridge --> PDFGen
+  Bridge --> Updater
+  Bridge --> Vault
 
-  AIRouter -. "HTTPS streaming" .-> LLM["LLM Providers<br/>Anthropic · OpenAI · Google · Ollama"]
-  FileIO -. fs --> Disk[("Local disk<br/>.md files")]
-  Vault -. encrypt/decrypt .-> Keychain[("OS Keychain")]
-  Updater -. checks .-> GH[("GitHub Releases")]
-  PDFGen -. spawn hidden .-> Hidden["Hidden BrowserWindow<br/>renders preview HTML"]
+  AIRouter -.->|HTTPS stream| LLM["LLM Providers<br/>Anthropic · OpenAI · Google · Ollama"]
+  FileIO -.->|fs| Disk[(Local disk)]
+  Vault -.->|encrypt| Keychain[(OS Keychain)]
+  Updater -.->|check| GH[(GitHub Releases)]
+  PDFGen -.->|spawn| Hidden["Hidden BrowserWindow<br/>renders preview HTML"]
 
-  class Main main
-  class Preload preload
-  class Renderer renderer
-  class LLM,Disk,Keychain,GH,Hidden external
+  style Main fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style Preload fill:#1a1c26,stroke:#fcd34d,color:#ebebef
+  style Renderer fill:#1a1c26,stroke:#86efac,color:#ebebef
             </pre>
             <div class="diagram-caption">Process boundaries and external dependencies.</div>
           </div>
@@ -884,31 +884,31 @@ flowchart TB
               <pre class="mermaid">
 sequenceDiagram
   actor User
-  participant R as Renderer<br/>(SelectionToolbar)
-  participant P as Preload<br/>(window.marky.ai)
-  participant M as Main<br/>(ipc/ai.ts)
+  participant R as Renderer
+  participant P as Preload
+  participant M as Main
   participant Prov as Provider SDK
   participant API as LLM API
 
-  User->>R: select text → "Rewrite"
-  R->>R: build AIChatRequest (prompts.ts)
+  User->>R: select text + click "Rewrite"
+  R->>R: build AIChatRequest
   R->>P: stream(id, request, onEvent)
-  P->>M: ipcRenderer.invoke('ai:stream:start', id, req)
-  M->>M: new AbortController()
+  P->>M: invoke ai:stream:start
+  M->>M: new AbortController
   M->>Prov: provider.stream(req, signal)
-  Prov->>API: HTTP POST (stream: true)
+  Prov->>API: HTTP POST stream
   loop streaming
-    API-->>Prov: SSE chunk
+    API-->>Prov: chunk
     Prov-->>M: yield text
-    M-->>P: webContents.send('ai:stream:event', id, {chunk})
+    M-->>P: send ai:stream:event chunk
     P-->>R: callback(event)
-    R->>R: dispatch CM transaction → replace selection
+    R->>R: dispatch CM transaction
   end
   API-->>Prov: done
   Prov-->>M: generator return
-  M-->>R: ai:stream:event {done}
-  User->>R: Accept / Reject
-  R->>R: keep or restore original text
+  M-->>R: ai:stream:event done
+  User->>R: Accept or Reject
+  R->>R: keep or restore original
               </pre>
               <div class="diagram-caption">AI selection-refine: renderer → main → provider, streaming chunks back.</div>
             </div>
@@ -930,24 +930,24 @@ sequenceDiagram
 sequenceDiagram
   actor User
   participant R as Renderer
-  participant M as Main<br/>(ipc/pdf.ts)
-  participant H as Hidden BrowserWindow
+  participant M as Main
+  participant H as Hidden Window
 
   User->>R: Ctrl+E
   R->>R: renderMarkdown(tab.content)
-  R->>R: resolveMermaid(html, dark) → SVG inline
-  R->>R: wrap with print CSS + KaTeX CSS
-  R->>M: exportPdf({ html, defaultName, dark })
-  M->>User: dialog.showSaveDialog
+  R->>R: resolveMermaid to inline SVG
+  R->>R: wrap with print CSS and KaTeX CSS
+  R->>M: exportPdf(html, defaultName, dark)
+  M->>User: showSaveDialog
   User-->>M: filePath
-  M->>H: new BrowserWindow({ show: false })
-  H->>H: loadURL('data:text/html,' + encoded)
-  Note over H: ~150 ms for fonts/layout to settle
-  M->>H: webContents.printToPDF(opts)
+  M->>H: new BrowserWindow show false
+  H->>H: loadURL data text html
+  Note over H: 150 ms for fonts and layout
+  M->>H: webContents.printToPDF
   H-->>M: PDF Buffer
-  M->>M: fs.writeFile(filePath, buffer)
-  M-->>R: { canceled: false, path }
-  H->>H: destroy()
+  M->>M: fs.writeFile filePath buffer
+  M-->>R: success path
+  H->>H: destroy
               </pre>
               <div class="diagram-caption">Same Chromium → same rendering. No second markdown engine to drift.</div>
             </div>
@@ -966,30 +966,30 @@ sequenceDiagram
             <div class="diagram">
               <pre class="mermaid">
 sequenceDiagram
-  participant App as App<br/>(on launch)
+  participant App
   participant U as electron-updater
   participant GH as GitHub Releases
   participant R as Renderer
-  participant User
+  actor User
 
-  App->>App: setTimeout 5s
-  App->>U: autoUpdater.checkForUpdates()
-  U->>GH: GET /latest.yml
-  GH-->>U: { version, url, sha512 }
+  App->>App: setTimeout 5s after launch
+  App->>U: autoUpdater.checkForUpdates
+  U->>GH: GET latest.yml
+  GH-->>U: version, url, sha512
   alt new version available
-    U-->>App: emit 'update-available'
-    App->>R: webContents.send('update:event', {available, version})
-    U->>GH: GET installer (+ .blockmap for delta)
+    U-->>App: emit update-available
+    App->>R: send update:event available
+    U->>GH: GET installer plus blockmap
     GH-->>U: bytes
-    U-->>App: emit 'update-downloaded'
-    App->>R: webContents.send('update:event', {downloaded})
-    R->>User: toast "Marky x.y.z is ready — Restart now"
+    U-->>App: emit update-downloaded
+    App->>R: send update:event downloaded
+    R->>User: toast Restart now
     User->>R: click Restart
-    R->>App: ipcRenderer.send('update:install')
-    App->>U: autoUpdater.quitAndInstall()
+    R->>App: send update:install
+    App->>U: autoUpdater.quitAndInstall
   else up to date
-    U-->>App: emit 'update-not-available'
-    App->>R: webContents.send('update:event', {not-available})
+    U-->>App: emit update-not-available
+    App->>R: send update:event not-available
   end
               </pre>
               <div class="diagram-caption">Manual check ("Check for updates" button) shares the same event pipeline.</div>
@@ -1010,23 +1010,31 @@ sequenceDiagram
             <div class="diagram">
               <pre class="mermaid">
 flowchart LR
-  classDef plat fill:#1a1c26,stroke:#818cf8,color:#ebebef
-  classDef step fill:#0e1018,stroke:#888a99,color:#b4b6c2
+  Finder["Finder<br/>double-click .md"] --> OpenFile["open-file event<br/>macOS only"]
+  Explorer["Explorer<br/>double-click .md"] --> Argv["process.argv<br/>Win and Linux"]
+  Running["Already running<br/>second instance"] --> Second["second-instance event<br/>with argv"]
 
-  Finder["Finder<br/>double-click .md"]:::plat --> OpenFile["open-file event<br/>(macOS-only)"]:::step
-  Explorer["Explorer<br/>double-click .md"]:::plat --> Argv["process.argv<br/>(Win/Linux)"]:::step
-  Running["Already running<br/>second instance"]:::plat --> Second["second-instance event<br/>w/ argv"]:::step
-
-  OpenFile --> Queue["queueFileFromOs(path)<br/>reads + buffers"]:::step
+  OpenFile --> Queue["queueFileFromOs<br/>reads and buffers"]
   Argv --> Queue
   Second --> Queue
 
-  Queue -->|window ready| Send["webContents.send<br/>'file:open-from-os'"]:::step
+  Queue -->|window ready| Send["webContents.send<br/>file:open-from-os"]
   Queue -->|window not ready| Pending[("pendingFromOs[]")]
-  Pending -. "renderer pulls" .-> Get["files.getPending()"]:::step
+  Pending -.->|renderer pulls| Get["files.getPending"]
 
-  Send --> Open["openFile(file) + recent.add(path)"]:::plat
+  Send --> Open["openFile + recent.add"]
   Get --> Open
+
+  style Finder fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style Explorer fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style Running fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style Open fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style OpenFile fill:#0e1018,stroke:#888a99,color:#b4b6c2
+  style Argv fill:#0e1018,stroke:#888a99,color:#b4b6c2
+  style Second fill:#0e1018,stroke:#888a99,color:#b4b6c2
+  style Queue fill:#0e1018,stroke:#888a99,color:#b4b6c2
+  style Send fill:#0e1018,stroke:#888a99,color:#b4b6c2
+  style Get fill:#0e1018,stroke:#888a99,color:#b4b6c2
               </pre>
               <div class="diagram-caption">Three OS paths → one queue → one openFile + recent-files flow.</div>
             </div>
@@ -1048,27 +1056,32 @@ flowchart LR
             <div class="diagram">
               <pre class="mermaid">
 flowchart LR
-  classDef io fill:#1a1c26,stroke:#818cf8,color:#ebebef
-  classDef proc fill:#0e1018,stroke:#86efac,color:#ebebef
-
-  Type["User types"]:::io --> Doc[("CodeMirror doc")]:::io
-  Doc -- "updateListener (debounced 120ms)" --> Tabs[("Zustand: tab.content")]:::io
+  Type["User types"] --> Doc[("CodeMirror doc")]
+  Doc -->|updateListener debounced 120ms| Tabs[("Zustand: tab.content")]
   Tabs --> Pipeline
 
-  subgraph Pipeline["Preview pipeline (renderer)"]
+  subgraph Pipeline["Preview pipeline"]
     direction LR
     A[remark-parse] --> B[remark-gfm]
     B --> C[remark-math]
     C --> D[remark-rehype]
     D --> E[rehype-mermaid-extract]
     E --> F[rehype-katex]
-    F --> G[rehype-shiki<br/>dual theme]
+    F --> G["rehype-shiki<br/>dual theme"]
     G --> H[rehype-stringify]
   end
 
-  Pipeline --> HTML["HTML string"]:::proc
-  HTML --> DOM["dangerouslySetInnerHTML<br/>+ hydrateMermaidBlocks"]:::proc
-  DOM --> View["Live preview"]:::io
+  Pipeline --> HTML["HTML string"]
+  HTML --> DOM["dangerouslySetInnerHTML<br/>+ hydrateMermaidBlocks"]
+  DOM --> View["Live preview"]
+
+  style Type fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style Doc fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style Tabs fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style View fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  style HTML fill:#0e1018,stroke:#86efac,color:#ebebef
+  style DOM fill:#0e1018,stroke:#86efac,color:#ebebef
+  style Pipeline fill:#0e1018,stroke:#fcd34d,color:#ebebef
               </pre>
               <div class="diagram-caption">Editor → debounced unified pipeline → DOM. Mermaid hydrates lazily.</div>
             </div>

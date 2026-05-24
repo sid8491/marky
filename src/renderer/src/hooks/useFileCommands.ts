@@ -1,114 +1,40 @@
 import { useEffect } from 'react'
-import { useTabs, isDirty } from '@/store/tabs'
-import { useSettings } from '@/store/settings'
-import { useRecent } from '@/store/recent'
-import { toast } from '@/store/toasts'
-import { exportToPdf } from '@/lib/exportPdf'
+import * as fileCmds from '@/commands/file'
 
-export function useFileCommands(): {
-  newDoc: () => string
-  openFile: () => Promise<void>
-  openPath: (path: string) => Promise<void>
-  saveActive: () => Promise<void>
-  saveActiveAs: () => Promise<void>
-  closeActive: () => Promise<void>
-  exportPdf: () => Promise<void>
-} {
-  const newDoc = useTabs((s) => s.newTab)
-  const openFile = async (): Promise<void> => {
-    const files = await window.marky.files.openDialog()
-    const tabsStore = useTabs.getState()
-    const recent = useRecent.getState()
-    for (const f of files) {
-      tabsStore.openFile(f)
-      recent.add(f.path, '')
-    }
-  }
-  const openPath = async (path: string): Promise<void> => {
-    try {
-      const file = await window.marky.files.read(path)
-      useTabs.getState().openFile(file)
-      useRecent.getState().add(file.path, '')
-    } catch (err) {
-      toast('Could not open file', {
-        description: (err as Error).message ?? String(err),
-        kind: 'error'
-      })
-      useRecent.getState().remove(path)
-    }
-  }
-
-  const saveActive = async (): Promise<void> => {
-    const { tabs, activeId, markSaved } = useTabs.getState()
-    const tab = tabs.find((t) => t.id === activeId)
-    if (!tab) return
-    if (!tab.path) return saveActiveAs()
-    const { mtimeMs } = await window.marky.files.write(tab.path, tab.content)
-    markSaved(tab.id, tab.content, mtimeMs)
-  }
-
-  const saveActiveAs = async (): Promise<void> => {
-    const { tabs, activeId, markSaved } = useTabs.getState()
-    const tab = tabs.find((t) => t.id === activeId)
-    if (!tab) return
-    const result = await window.marky.files.saveDialog({
-      defaultName: (tab.path ? tab.title : tab.title) + (tab.path ? '' : '.md')
-    })
-    if (result.canceled || !result.path) return
-    const { mtimeMs } = await window.marky.files.write(result.path, tab.content)
-    markSaved(tab.id, tab.content, mtimeMs, result.path)
-    useRecent.getState().add(result.path, '')
-  }
-
-  const exportPdf = async (): Promise<void> => {
-    const { tabs, activeId } = useTabs.getState()
-    const tab = tabs.find((t) => t.id === activeId)
-    if (!tab) return
-    const dark = useSettings.getState().resolvedDark
-    await exportToPdf({ markdown: tab.content, defaultName: tab.title, dark })
-  }
-
-  const closeActive = async (): Promise<void> => {
-    const { tabs, activeId, closeTab } = useTabs.getState()
-    const tab = tabs.find((t) => t.id === activeId)
-    if (!tab) return
-    if (isDirty(tab)) {
-      const choice = window.confirm(`Save changes to ${tab.title} before closing?`)
-      if (choice) await saveActive()
-    }
-    closeTab(tab.id)
-  }
-
+/**
+ * Register the global keyboard shortcuts for file commands. Call exactly once
+ * (in App.tsx). The actual command functions live in commands/file.ts and can
+ * be imported directly elsewhere (command palette, toolbar) without going
+ * through this hook — that would double-register the keydown listener.
+ */
+export function useFileCommands(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const mod = e.ctrlKey || e.metaKey
       if (!mod) return
-      if (e.key === 'n' || e.key === 'N') {
+      const key = e.key.toLowerCase()
+      if (key === 'n') {
         e.preventDefault()
-        newDoc()
-      } else if (e.key === 'o' || e.key === 'O') {
+        fileCmds.newDoc()
+      } else if (key === 'o') {
         e.preventDefault()
-        void openFile()
-      } else if ((e.key === 's' || e.key === 'S') && e.shiftKey) {
+        void fileCmds.openFile()
+      } else if (key === 's' && e.shiftKey) {
         e.preventDefault()
-        void saveActiveAs()
-      } else if (e.key === 's' || e.key === 'S') {
+        void fileCmds.saveActiveAs()
+      } else if (key === 's') {
         e.preventDefault()
-        void saveActive()
-      } else if (e.key === 'w' || e.key === 'W') {
+        void fileCmds.saveActive()
+      } else if (key === 'w') {
         e.preventDefault()
-        void closeActive()
-      } else if (e.key === 'e' || e.key === 'E') {
-        if (e.shiftKey) return // Ctrl+Shift+E is view-mode shortcut
+        void fileCmds.closeActive()
+      } else if (key === 'e' && !e.shiftKey) {
+        // Ctrl+Shift+E is the editor-only view-mode shortcut — leave it alone.
         e.preventDefault()
-        void exportPdf()
+        void fileCmds.exportPdf()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-    // Handlers read live state via useTabs.getState() — no deps needed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  return { newDoc, openFile, openPath, saveActive, saveActiveAs, closeActive, exportPdf }
 }

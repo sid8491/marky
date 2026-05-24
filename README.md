@@ -2,7 +2,11 @@
 
 A beautiful cross-platform Markdown editor with first-class AI assistance and pixel-perfect PDF export.
 
-📖 **[Architecture & design docs →](https://sid8491.github.io/marky/)** — HLD, sequence diagrams, tech-stack rationale, project layout.
+[![Architecture & design](https://img.shields.io/badge/docs-architecture%20%26%20design-818cf8?style=for-the-badge)](https://sid8491.github.io/marky/)
+[![Latest release](https://img.shields.io/github/v/release/sid8491/marky?style=for-the-badge&color=4f46e5)](https://github.com/sid8491/marky/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-1a1c26?style=for-the-badge)](./LICENSE)
+
+> **📖 Read the design** — HLD, sequence diagrams, tech-stack rationale, and full project layout are documented at **<https://sid8491.github.io/marky/>**.
 
 > Status: early — v0.1. Core editor, preview, AI, and PDF export are wired up. Shipping polish (icons, code signing, auto-update) is still pending.
 

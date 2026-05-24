@@ -20,7 +20,7 @@ import {
 import { useTabs } from '@/store/tabs'
 import { useSettings } from '@/store/settings'
 import { useRecent } from '@/store/recent'
-import { useFileCommands } from '@/hooks/useFileCommands'
+import * as fileCmds from '@/commands/file'
 import { cn } from '@/lib/cn'
 import { getActiveEditorView } from '@/editor/activeView'
 import { requestGhostText } from '@/editor/ghostText'
@@ -42,7 +42,6 @@ export function CommandPalette(): React.ReactElement {
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const cmds = useFileCommands()
   const setTheme = useSettings((s) => s.setTheme)
   const toggleSyncScroll = useSettings((s) => s.toggleSyncScroll)
   const toggleLineNumbers = useSettings((s) => s.toggleLineNumbers)
@@ -84,7 +83,7 @@ export function CommandPalette(): React.ReactElement {
         shortcut: 'Ctrl N',
         icon: FilePlus2,
         run: () => {
-          cmds.newDoc()
+          fileCmds.newDoc()
         }
       },
       {
@@ -93,7 +92,7 @@ export function CommandPalette(): React.ReactElement {
         group: 'File',
         shortcut: 'Ctrl O',
         icon: FolderOpen,
-        run: () => cmds.openFile()
+        run: () => fileCmds.openFile()
       },
       {
         id: 'file.save',
@@ -101,7 +100,7 @@ export function CommandPalette(): React.ReactElement {
         group: 'File',
         shortcut: 'Ctrl S',
         icon: Save,
-        run: () => cmds.saveActive()
+        run: () => fileCmds.saveActive()
       },
       {
         id: 'file.saveAs',
@@ -109,7 +108,7 @@ export function CommandPalette(): React.ReactElement {
         group: 'File',
         shortcut: 'Ctrl Shift S',
         icon: Save,
-        run: () => cmds.saveActiveAs()
+        run: () => fileCmds.saveActiveAs()
       },
       {
         id: 'file.export.pdf',
@@ -117,7 +116,7 @@ export function CommandPalette(): React.ReactElement {
         group: 'File',
         shortcut: 'Ctrl E',
         icon: FileDown,
-        run: () => cmds.exportPdf()
+        run: () => fileCmds.exportPdf()
       },
       {
         id: 'file.close',
@@ -125,7 +124,7 @@ export function CommandPalette(): React.ReactElement {
         group: 'File',
         shortcut: 'Ctrl W',
         icon: XCircle,
-        run: () => cmds.closeActive()
+        run: () => fileCmds.closeActive()
       },
       {
         id: 'view.edit',
@@ -220,7 +219,7 @@ export function CommandPalette(): React.ReactElement {
         hint: r.path,
         group: 'Recent',
         icon: FolderOpen,
-        run: () => cmds.openPath(r.path)
+        run: () => fileCmds.openPath(r.path)
       }))
     ]
     return list
