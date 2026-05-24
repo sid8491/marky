@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -99,22 +99,115 @@ function Divider(): React.ReactElement {
   return <span className="mx-1 h-4 w-px shrink-0 bg-subtle" />
 }
 
-/* ------------------------- Dropdowns ------------------------- */
+/* ------------------------- Dropdown infrastructure ------------------------- */
 
-function useClickOutside(
-  ref: React.RefObject<HTMLElement | null>,
-  open: boolean,
-  close: () => void
-): void {
+/**
+ * Generic dropdown trigger + floating menu. The menu uses position: fixed and
+ * is positioned from the trigger's bounding rect, so it escapes any
+ * overflow-clipping parent (the toolbar uses overflow-x-auto, which collapses
+ * overflow-y too and would clip menus rendered inside it).
+ */
+function Dropdown({
+  trigger,
+  children,
+  menuClassName,
+  align = 'left'
+}: {
+  trigger: (props: {
+    open: boolean
+    toggle: () => void
+    ref: React.RefObject<HTMLButtonElement | null>
+  }) => React.ReactNode
+  children: (close: () => void) => React.ReactNode
+  menuClassName?: string
+  align?: 'left' | 'right'
+}): React.ReactElement {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const reposition = (): void => {
+    const btn = buttonRef.current
+    if (!btn) return
+    const r = btn.getBoundingClientRect()
+    const left = align === 'right' ? r.right : r.left
+    setPos({ top: r.bottom + 4, left })
+  }
+
+  const toggle = (): void => {
+    if (!open) reposition()
+    setOpen((o) => !o)
+  }
+  const close = (): void => setOpen(false)
+
+  // Keep the menu glued to the button while it's open.
+  useLayoutEffect(() => {
+    if (!open) return
+    reposition()
+    const onMove = (): void => reposition()
+    window.addEventListener('resize', onMove)
+    window.addEventListener('scroll', onMove, true)
+    return () => {
+      window.removeEventListener('resize', onMove)
+      window.removeEventListener('scroll', onMove, true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  // Close on click outside (the menu lives in a portal-ish fixed layer, so
+  // check both the button and the menu).
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent): void => {
-      if (!ref.current?.contains(e.target as Node)) close()
+      const target = e.target as Node
+      if (buttonRef.current?.contains(target)) return
+      if (menuRef.current?.contains(target)) return
+      close()
+    }
+    const onEsc = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [open, ref, close])
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
+
+  return (
+    <>
+      {trigger({ open, toggle, ref: buttonRef })}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            transition={{ duration: 0.14 }}
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: align === 'left' ? pos.left : undefined,
+              right: align === 'right' ? window.innerWidth - pos.left : undefined
+            }}
+            className={cn(
+              'z-50 rounded-lg border border-strong bg-elevated p-1 shadow-elevated',
+              menuClassName
+            )}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            {children(close)}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
 }
+
+/* ------------------------- Specific menus ------------------------- */
 
 type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 const HEADING_ITEMS: Array<{ level: HeadingLevel; label: string; sizeClass: string }> = [
@@ -136,49 +229,40 @@ function HeadingMenu({
 }: {
   onChoose: (level: HeadingLevel) => void
 }): React.ReactElement {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useClickOutside(ref, open, () => setOpen(false))
-
   return (
-    <div ref={ref} className="relative">
-      <button
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setOpen((o) => !o)}
-        title="Heading level"
-        className="flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-muted transition-colors hover:bg-elevated hover:text-default"
-      >
-        <Heading className="size-4" strokeWidth={1.75} />
-        <ChevronDown className="size-3" />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.96 }}
-            transition={{ duration: 0.14 }}
-            className="absolute top-full left-0 z-40 mt-1 w-44 rounded-lg border border-strong bg-elevated p-1 shadow-elevated"
+    <Dropdown
+      menuClassName="w-44"
+      trigger={({ toggle, ref }) => (
+        <button
+          ref={ref}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={toggle}
+          title="Heading level"
+          className="flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-muted transition-colors hover:bg-elevated hover:text-default"
+        >
+          <Heading className="size-4" strokeWidth={1.75} />
+          <ChevronDown className="size-3" />
+        </button>
+      )}
+    >
+      {(close) =>
+        HEADING_ITEMS.map((item) => (
+          <button
+            key={item.level}
+            onClick={() => {
+              onChoose(item.level)
+              close()
+            }}
+            className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-muted transition-colors hover:bg-panel hover:text-default"
           >
-            {HEADING_ITEMS.map((item) => (
-              <button
-                key={item.level}
-                onClick={() => {
-                  onChoose(item.level)
-                  setOpen(false)
-                }}
-                className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-muted transition-colors hover:bg-panel hover:text-default"
-              >
-                <span className={item.sizeClass}>{item.label}</span>
-                <span className="font-mono text-xs text-faint">
-                  {item.level === 0 ? '¶' : '#'.repeat(item.level)}
-                </span>
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            <span className={item.sizeClass}>{item.label}</span>
+            <span className="font-mono text-xs text-faint">
+              {item.level === 0 ? '¶' : '#'.repeat(item.level)}
+            </span>
+          </button>
+        ))
+      }
+    </Dropdown>
   )
 }
 
@@ -189,54 +273,47 @@ function MathMenu({
   onInline: () => void
   onBlock: () => void
 }): React.ReactElement {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useClickOutside(ref, open, () => setOpen(false))
-
   return (
-    <div ref={ref} className="relative">
-      <button
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setOpen((o) => !o)}
-        title="Math (KaTeX)"
-        className="flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-muted transition-colors hover:bg-elevated hover:text-default"
-      >
-        <Sigma className="size-4" strokeWidth={1.75} />
-        <ChevronDown className="size-3" />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.96 }}
-            transition={{ duration: 0.14 }}
-            className="absolute top-full left-0 z-40 mt-1 w-52 rounded-lg border border-strong bg-elevated p-1 shadow-elevated"
+    <Dropdown
+      menuClassName="w-52"
+      trigger={({ toggle, ref }) => (
+        <button
+          ref={ref}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={toggle}
+          title="Math (KaTeX)"
+          className="flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-muted transition-colors hover:bg-elevated hover:text-default"
+        >
+          <Sigma className="size-4" strokeWidth={1.75} />
+          <ChevronDown className="size-3" />
+        </button>
+      )}
+    >
+      {(close) => (
+        <>
+          <button
+            onClick={() => {
+              onInline()
+              close()
+            }}
+            className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-muted transition-colors hover:bg-panel hover:text-default"
           >
-            <button
-              onClick={() => {
-                onInline()
-                setOpen(false)
-              }}
-              className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-muted transition-colors hover:bg-panel hover:text-default"
-            >
-              <span className="text-sm">Inline math</span>
-              <span className="font-mono text-xs text-faint">$x$</span>
-            </button>
-            <button
-              onClick={() => {
-                onBlock()
-                setOpen(false)
-              }}
-              className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-muted transition-colors hover:bg-panel hover:text-default"
-            >
-              <span className="text-sm">Block math</span>
-              <span className="font-mono text-xs text-faint">$$…$$</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            <span className="text-sm">Inline math</span>
+            <span className="font-mono text-xs text-faint">$x$</span>
+          </button>
+          <button
+            onClick={() => {
+              onBlock()
+              close()
+            }}
+            className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-muted transition-colors hover:bg-panel hover:text-default"
+          >
+            <span className="text-sm">Block math</span>
+            <span className="font-mono text-xs text-faint">$$…$$</span>
+          </button>
+        </>
+      )}
+    </Dropdown>
   )
 }
 
@@ -245,65 +322,62 @@ function TablePicker({
 }: {
   onInsert: (rows: number, cols: number) => void
 }): React.ReactElement {
-  const [open, setOpen] = useState(false)
   const [hover, setHover] = useState({ r: 0, c: 0 })
-  const ref = useRef<HTMLDivElement>(null)
-  useClickOutside(ref, open, () => setOpen(false))
 
   return (
-    <div ref={ref} className="relative">
-      <ToolButton
-        onClick={() => setOpen((o) => !o)}
-        icon={TableIcon}
-        title="Insert table"
-      />
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.96 }}
-            transition={{ duration: 0.14 }}
-            className="absolute top-full left-0 z-40 mt-1 rounded-lg border border-strong bg-elevated p-2 shadow-elevated"
+    <Dropdown
+      menuClassName="p-2"
+      trigger={({ toggle, ref }) => (
+        <button
+          ref={ref}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={toggle}
+          title="Insert table"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-elevated hover:text-default"
+        >
+          <TableIcon className="size-4" strokeWidth={1.75} />
+        </button>
+      )}
+    >
+      {(close) => (
+        <>
+          <div
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${TABLE_MAX_COLS}, 1rem)`,
+              gridTemplateRows: `repeat(${TABLE_MAX_ROWS}, 1rem)`
+            }}
+            onMouseLeave={() => setHover({ r: 0, c: 0 })}
           >
-            <div
-              className="grid gap-1"
-              style={{
-                gridTemplateColumns: `repeat(${TABLE_MAX_COLS}, 1rem)`,
-                gridTemplateRows: `repeat(${TABLE_MAX_ROWS}, 1rem)`
-              }}
-              onMouseLeave={() => setHover({ r: 0, c: 0 })}
-            >
-              {Array.from({ length: TABLE_MAX_ROWS }).flatMap((_, r) =>
-                Array.from({ length: TABLE_MAX_COLS }).map((_, c) => {
-                  const within = r < hover.r && c < hover.c
-                  return (
-                    <button
-                      key={`${r}-${c}`}
-                      onMouseEnter={() => setHover({ r: r + 1, c: c + 1 })}
-                      onClick={() => {
-                        onInsert(r + 1, c + 1)
-                        setOpen(false)
-                        setHover({ r: 0, c: 0 })
-                      }}
-                      className={cn(
-                        'h-4 w-4 rounded border transition-colors',
-                        within
-                          ? 'border-accent bg-accent/60'
-                          : 'border-subtle bg-panel hover:border-strong'
-                      )}
-                      aria-label={`Insert ${r + 1} × ${c + 1} table`}
-                    />
-                  )
-                })
-              )}
-            </div>
-            <div className="mt-2 text-center font-mono text-xs text-faint">
-              {hover.r > 0 ? `${hover.r} × ${hover.c}` : 'Choose size'}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            {Array.from({ length: TABLE_MAX_ROWS }).flatMap((_, r) =>
+              Array.from({ length: TABLE_MAX_COLS }).map((_, c) => {
+                const within = r < hover.r && c < hover.c
+                return (
+                  <button
+                    key={`${r}-${c}`}
+                    onMouseEnter={() => setHover({ r: r + 1, c: c + 1 })}
+                    onClick={() => {
+                      onInsert(r + 1, c + 1)
+                      setHover({ r: 0, c: 0 })
+                      close()
+                    }}
+                    className={cn(
+                      'h-4 w-4 rounded border transition-colors',
+                      within
+                        ? 'border-accent bg-accent/60'
+                        : 'border-subtle bg-panel hover:border-strong'
+                    )}
+                    aria-label={`Insert ${r + 1} × ${c + 1} table`}
+                  />
+                )
+              })
+            )}
+          </div>
+          <div className="mt-2 text-center font-mono text-xs text-faint">
+            {hover.r > 0 ? `${hover.r} × ${hover.c}` : 'Choose size'}
+          </div>
+        </>
+      )}
+    </Dropdown>
   )
 }

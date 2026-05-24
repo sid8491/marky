@@ -1,5 +1,12 @@
 {
   "permissions": {
-    "allow": ["Bash(dir D:\\\\work\\\\develop\\\\marky *)"]
+    "allow": [
+      "Bash(dir D:\\\\work\\\\develop\\\\marky *)",
+      "PowerShell(npm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Fix toolbar dropdowns clipped by overflow container *)",
+      "Bash(git push *)",
+      "Bash(git tag *)"
+    ]
   }
 }
