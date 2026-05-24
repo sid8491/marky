@@ -1,5 +1,5 @@
 import { Decoration, EditorView, ViewPlugin, WidgetType, keymap } from '@codemirror/view'
-import { StateEffect, StateField, type Extension } from '@codemirror/state'
+import { Prec, StateEffect, StateField, type Extension } from '@codemirror/state'
 import { useAi } from '@/store/ai'
 import { startStream, type AIStreamHandle } from '@/ai/client'
 import { buildContinueRequest } from '@/ai/prompts'
@@ -182,7 +182,11 @@ export function ghostTextExtension(): Extension {
   const scheduler = new AutoScheduler()
   return [
     ghostField,
-    ghostKeymap,
+    // Run before the EditorPane's other keymaps so Tab is captured for
+    // accept-ghost instead of indentWithTab. acceptGhost / Escape handlers
+    // return false when no suggestion is active, so Tab still falls through
+    // to indenting in the normal case.
+    Prec.highest(ghostKeymap),
     ViewPlugin.fromClass(
       class {
         constructor(readonly view: EditorView) {}
