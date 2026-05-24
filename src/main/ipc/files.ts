@@ -13,9 +13,46 @@ const MD_FILTERS = [
 
 const watchers = new Map<string, FSWatcher>()
 
+/**
+ * Files queued by the OS (Finder open-file event on macOS, argv on Win/Linux,
+ * second-instance launches) waiting to be delivered to the renderer.
+ */
+const pendingFromOs: FileReadResult[] = []
+
 async function readFile(path: string): Promise<FileReadResult> {
   const [content, stat] = await Promise.all([fs.readFile(path, 'utf8'), fs.stat(path)])
   return { path, content, mtimeMs: stat.mtimeMs }
+}
+
+/**
+ * Read the path off disk and either deliver it to the renderer (if the window
+ * is up and loaded) or stash it for the next getPending() / flush call.
+ */
+export async function queueFileFromOs(
+  path: string,
+  win: BrowserWindow | null
+): Promise<void> {
+  let file: FileReadResult
+  try {
+    file = await readFile(path)
+  } catch {
+    return // unreadable — silently drop
+  }
+  const wc = win?.webContents
+  if (wc && !wc.isLoading()) {
+    wc.send(IPC.FILE_OPEN_FROM_OS, file)
+  } else {
+    pendingFromOs.push(file)
+  }
+}
+
+/** Drain the queue and push to the renderer once it's ready to receive. */
+export function flushQueuedFilesTo(win: BrowserWindow | null): void {
+  const wc = win?.webContents
+  if (!wc) return
+  for (const file of pendingFromOs.splice(0)) {
+    wc.send(IPC.FILE_OPEN_FROM_OS, file)
+  }
 }
 
 export function registerFileIpc(getMainWindow: () => BrowserWindow | null): void {
@@ -98,6 +135,10 @@ export function registerFileIpc(getMainWindow: () => BrowserWindow | null): void
       watchers.delete(path)
     }
   })
+
+  // Renderer pulls any queued OS-opened files on mount; we also push via
+  // FILE_OPEN_FROM_OS once the window is loaded (see flushQueuedFilesTo).
+  ipcMain.handle(IPC.FILE_GET_PENDING, () => pendingFromOs.splice(0))
 }
 
 export function disposeFileWatchers(): void {

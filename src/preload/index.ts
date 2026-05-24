@@ -45,6 +45,13 @@ const api = {
         cb(path, mtimeMs)
       ipcRenderer.on(IPC.FILE_CHANGED, listener)
       return () => ipcRenderer.off(IPC.FILE_CHANGED, listener)
+    },
+    getPending: () =>
+      ipcRenderer.invoke(IPC.FILE_GET_PENDING) as Promise<FileReadResult[]>,
+    onOpenFromOs: (cb: (file: FileReadResult) => void) => {
+      const listener = (_: unknown, file: FileReadResult): void => cb(file)
+      ipcRenderer.on(IPC.FILE_OPEN_FROM_OS, listener)
+      return () => ipcRenderer.off(IPC.FILE_OPEN_FROM_OS, listener)
     }
   },
 

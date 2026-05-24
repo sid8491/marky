@@ -9,6 +9,7 @@ A beautiful cross-platform Markdown editor with first-class AI assistance and pi
 ## Highlights
 
 - **Multi-tab editor** with side-by-side editor/preview, draggable split, `*` dirty indicator, drag-reorder, middle-click close.
+- **OS file associations** — once installed, Marky registers as an "Open With" handler for `.md`, `.markdown`, and `.mdx`. Double-click a file in Finder/Explorer (or drag it onto the app) to open in a new tab. If Marky is already running, the file forwards to the existing window instead of spawning a new instance.
 - **Formatting toolbar** above the editor — Heading dropdown (Paragraph + H1–H6), bold/italic/strike/inline-code with proper toggle behavior, lists/task lists, blockquote, links/images, code block, horizontal rule, Math (inline `$x$` + block `$$..$$`), Mermaid diagrams, and an interactive grid-picker for tables. No need to memorize markdown syntax.
 - **AI-native writing** — invoked explicitly, never intrusively.
   - On-demand continuation: press `Ctrl+J` (or use the command palette) to request an AI continuation at the cursor. `Tab` accepts, `Esc` dismisses. Optional auto-suggest as-you-type is available in Settings.
@@ -53,6 +54,8 @@ Until code signing is in place, SmartScreen may warn you on first launch — cli
 3. Supported: macOS 11 (Big Sur) and newer.
 
 Until the build is notarized, Gatekeeper will block the first launch. Right-click **Marky.app → Open**, then confirm. Once approved, normal launches work.
+
+**Quick Look (Space-bar preview)**: macOS Quick Look requires a separate native plugin and is not provided by Marky directly. For inline Space-bar previews of `.md` files in Finder, install the third-party [QLMarkdown](https://github.com/sbarex/QLMarkdown) generator. Marky is still the right tool for editing — set it as the default app for `.md` files under Finder → Get Info → Open With → Change All.
 
 ### Linux
 

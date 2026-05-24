@@ -2,10 +2,17 @@ import { app, BrowserWindow, session } from 'electron'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { createMainWindow } from './window'
 import { registerWindowIpc } from './ipc/window'
-import { registerFileIpc, disposeFileWatchers } from './ipc/files'
+import {
+  registerFileIpc,
+  disposeFileWatchers,
+  queueFileFromOs,
+  flushQueuedFilesTo
+} from './ipc/files'
 import { registerPdfIpc } from './ipc/pdf'
 import { registerAiIpc } from './ipc/ai'
 import { registerUpdatesIpc } from './ipc/updates'
+
+const MD_EXTENSIONS = /\.(md|markdown|mdx|txt)$/i
 
 function installCsp(): void {
   // Dev needs unsafe-eval/unsafe-inline for Vite HMR + Fast Refresh.
@@ -46,35 +53,80 @@ function getMainWindow(): BrowserWindow | null {
   return mainWindow
 }
 
-app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.marky.app')
-  installCsp()
+function extractMarkdownPathsFromArgv(argv: string[]): string[] {
+  // Skip the executable and any switches; keep anything that looks like a
+  // markdown-flavoured file path.
+  return argv.slice(1).filter((arg) => !arg.startsWith('-') && MD_EXTENSIONS.test(arg))
+}
 
-  app.on('browser-window-created', (_, win) => {
-    optimizer.watchWindowShortcuts(win)
+function focusMainWindow(): void {
+  if (!mainWindow) return
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.focus()
+}
+
+// Single-instance lock so double-clicking a .md file while Marky is already
+// running forwards the path to the existing instance instead of spawning a
+// second app.
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    for (const path of extractMarkdownPathsFromArgv(argv)) {
+      void queueFileFromOs(path, mainWindow)
+    }
+    focusMainWindow()
   })
 
-  registerWindowIpc(getMainWindow)
-  registerFileIpc(getMainWindow)
-  registerPdfIpc(getMainWindow)
-  registerAiIpc(getMainWindow)
-  registerUpdatesIpc(getMainWindow)
-
-  mainWindow = createMainWindow()
-  mainWindow.on('closed', () => {
-    mainWindow = null
+  // macOS: Finder hands us a path via this event. May fire BEFORE the app is
+  // ready (when the app launches in response to a double-click).
+  app.on('open-file', (event, path) => {
+    event.preventDefault()
+    void queueFileFromOs(path, mainWindow)
   })
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createMainWindow()
+  app.whenReady().then(() => {
+    electronApp.setAppUserModelId('com.marky.app')
+    installCsp()
+
+    app.on('browser-window-created', (_, win) => {
+      optimizer.watchWindowShortcuts(win)
+    })
+
+    registerWindowIpc(getMainWindow)
+    registerFileIpc(getMainWindow)
+    registerPdfIpc(getMainWindow)
+    registerAiIpc(getMainWindow)
+    registerUpdatesIpc(getMainWindow)
+
+    // Windows/Linux: file path is passed as argv when the OS launches us via
+    // a file association. Queue these before showing the window.
+    for (const path of extractMarkdownPathsFromArgv(process.argv)) {
+      void queueFileFromOs(path, null)
+    }
+
+    mainWindow = createMainWindow()
+    mainWindow.on('closed', () => {
+      mainWindow = null
+    })
+    mainWindow.webContents.once('did-finish-load', () => {
+      // Renderer also pulls via files.getPending() on mount, but push too so
+      // late-arriving open-file events surface promptly.
+      flushQueuedFilesTo(mainWindow)
+    })
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        mainWindow = createMainWindow()
+      }
+    })
+  })
+
+  app.on('window-all-closed', () => {
+    disposeFileWatchers()
+    if (process.platform !== 'darwin') {
+      app.quit()
     }
   })
-})
-
-app.on('window-all-closed', () => {
-  disposeFileWatchers()
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+}

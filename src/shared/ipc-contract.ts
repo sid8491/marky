@@ -48,6 +48,8 @@ export const IPC = {
   FILE_WATCH: 'file:watch',
   FILE_UNWATCH: 'file:unwatch',
   FILE_CHANGED: 'file:changed',
+  FILE_GET_PENDING: 'file:get-pending',
+  FILE_OPEN_FROM_OS: 'file:open-from-os',
 
   // export
   EXPORT_PDF: 'export:pdf',
@@ -93,6 +95,10 @@ export interface MarkyApi {
     watch: (path: string) => void
     unwatch: (path: string) => void
     onChanged: (cb: (path: string, mtimeMs: number) => void) => () => void
+    /** Files queued at launch via OS file-association (open-file / argv). */
+    getPending: () => Promise<FileReadResult[]>
+    /** Subsequent OS-initiated opens once the app is already running. */
+    onOpenFromOs: (cb: (file: FileReadResult) => void) => () => void
   }
 
   exportPdf: (opts: ExportPdfOptions) => Promise<{ canceled: boolean; path?: string }>

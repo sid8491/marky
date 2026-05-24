@@ -14,6 +14,26 @@ files:
   - '!build/**'
 asarUnpack:
   - resources/**
+# Register Marky as an "Open With" handler for markdown files on all
+# platforms. macOS gets the entries in Info.plist (LSItemContentTypes);
+# Windows NSIS writes registry keys via the installer; Linux .desktop
+# files declare MimeType associations.
+fileAssociations:
+  - ext: md
+    name: Markdown
+    description: Markdown document
+    role: Editor
+    rank: Alternate
+  - ext: markdown
+    name: Markdown
+    description: Markdown document
+    role: Editor
+    rank: Alternate
+  - ext: mdx
+    name: MDX
+    description: MDX document
+    role: Editor
+    rank: Alternate
 win:
   executableName: Marky
   icon: build/icons/icon.ico
