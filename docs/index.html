@@ -486,8 +486,13 @@
       /* ===== Demo grid ===== */
       .demo-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+      }
+      @media (max-width: 720px) {
+        .demo-grid {
+          grid-template-columns: 1fr;
+        }
       }
       .demo-card {
         background: var(--bg-2);
@@ -496,7 +501,7 @@
         overflow: hidden;
       }
       .demo-frame {
-        aspect-ratio: 16 / 10;
+        aspect-ratio: 16 / 9;
         background:
           linear-gradient(135deg, var(--accent-glow), transparent 70%),
           repeating-linear-gradient(
