@@ -12,6 +12,7 @@ files:
   - '!{eslint.config.mjs,.prettierrc.json,.prettierignore,.gitattributes}'
   - '!marky.png'
   - '!build/**'
+  - '!docs/**'
 asarUnpack:
   - resources/**
 # Register Marky as an "Open With" handler for markdown files on all

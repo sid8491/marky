@@ -6,3 +6,6 @@ build/icons
 package-lock.json
 *.min.js
 *.min.css
+
+# Hand-crafted GitHub Pages site — keep the careful formatting
+docs/

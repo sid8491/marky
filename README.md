@@ -2,6 +2,8 @@
 
 A beautiful cross-platform Markdown editor with first-class AI assistance and pixel-perfect PDF export.
 
+📖 **[Architecture & design docs →](https://sid8491.github.io/marky/)** — HLD, sequence diagrams, tech-stack rationale, project layout.
+
 > Status: early — v0.1. Core editor, preview, AI, and PDF export are wired up. Shipping polish (icons, code signing, auto-update) is still pending.
 
 ---

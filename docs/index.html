@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Marky — Architecture & Design</title>
+    <meta name="description" content="A beautiful cross-platform Markdown editor with AI assistance and pixel-perfect PDF export. Architecture, design decisions, and system flow." />
+    <meta property="og:title" content="Marky — Architecture & Design" />
+    <meta property="og:description" content="A beautiful cross-platform Markdown editor with AI assistance and pixel-perfect PDF export." />
+    <meta property="og:image" content="./assets/marky-icon.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/png" href="./assets/marky-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        --bg: #0b0b0e;
+        --bg-2: #14151d;
+        --bg-3: #1a1c26;
+        --text: #ebebef;
+        --text-muted: #b4b6c2;
+        --text-faint: #888a99;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.14);
+        --accent: #818cf8;
+        --accent-2: #6366f1;
+        --accent-glow: rgba(129, 140, 248, 0.18);
+        --code-bg: #0e1018;
+        --shadow: 0 12px 60px rgba(0, 0, 0, 0.55);
+        --radius: 14px;
+        --radius-sm: 8px;
+        --container: 1080px;
+      }
+      [data-theme='light'] {
+        --bg: #ffffff;
+        --bg-2: #f7f7f8;
+        --bg-3: #ffffff;
+        --text: #1a1c26;
+        --text-muted: #5e6171;
+        --text-faint: #888a99;
+        --border: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.14);
+        --accent: #6366f1;
+        --accent-2: #4f46e5;
+        --accent-glow: rgba(99, 102, 241, 0.15);
+        --code-bg: #f2f3f7;
+        --shadow: 0 12px 60px rgba(15, 16, 23, 0.08);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 80px;
+      }
+      body {
+        margin: 0;
+        font-family:
+          'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-feature-settings: 'ss01', 'cv11', 'cv02', 'cv03';
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.6;
+      }
+
+      /* ===== Layout ===== */
+      .container {
+        width: 100%;
+        max-width: var(--container);
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      section {
+        padding: 88px 0;
+        position: relative;
+      }
+      section + section {
+        border-top: 1px solid var(--border);
+      }
+
+      /* ===== Nav ===== */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: color-mix(in srgb, var(--bg) 80%, transparent);
+        backdrop-filter: saturate(180%) blur(12px);
+        -webkit-backdrop-filter: saturate(180%) blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        height: 60px;
+        gap: 24px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--text);
+        text-decoration: none;
+        letter-spacing: -0.01em;
+      }
+      .brand img {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+      }
+      .nav-links {
+        display: flex;
+        gap: 22px;
+        margin-left: auto;
+        font-size: 14px;
+      }
+      .nav-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+      }
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .icon-btn {
+        appearance: none;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+      }
+      .icon-btn:hover {
+        color: var(--text);
+        border-color: var(--border-strong);
+        background: var(--bg-2);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--accent-2);
+        color: white;
+      }
+      .btn-primary:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+      .btn-ghost {
+        color: var(--text);
+        border-color: var(--border);
+        background: var(--bg-2);
+      }
+      .btn-ghost:hover {
+        border-color: var(--border-strong);
+      }
+
+      /* ===== Hero ===== */
+      .hero {
+        padding: 100px 0 80px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: -200px 0 0 0;
+        background: radial-gradient(
+          800px 360px at 50% 0%,
+          var(--accent-glow),
+          transparent 65%
+        );
+        pointer-events: none;
+        z-index: -1;
+      }
+      .hero-icon {
+        width: 96px;
+        height: 96px;
+        border-radius: 22px;
+        box-shadow: 0 18px 60px var(--accent-glow);
+        margin-bottom: 28px;
+      }
+      .hero h1 {
+        font-size: clamp(40px, 6vw, 68px);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        margin: 0 0 18px;
+        font-weight: 800;
+        background: linear-gradient(180deg, var(--text), color-mix(in srgb, var(--text) 70%, var(--accent)));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero .lede {
+        font-size: clamp(17px, 1.6vw, 20px);
+        color: var(--text-muted);
+        max-width: 620px;
+        margin: 0 auto 32px;
+        line-height: 1.55;
+      }
+      .hero-cta {
+        display: inline-flex;
+        gap: 12px;
+      }
+      .hero-meta {
+        margin-top: 28px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 14px;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+      .hero-meta .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-glow);
+      }
+
+      /* ===== Pitch grid ===== */
+      .pitch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 56px;
+      }
+      .pitch-card {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+        transition: all 0.2s;
+      }
+      .pitch-card:hover {
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+      }
+      .pitch-card .ico {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        background: var(--accent-glow);
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+      }
+      .pitch-card h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .pitch-card p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      /* ===== Section heading ===== */
+      .section-head {
+        margin-bottom: 40px;
+      }
+      .eyebrow {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+      .section-head h2 {
+        font-size: clamp(28px, 3.5vw, 40px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 12px;
+        line-height: 1.15;
+      }
+      .section-head p {
+        font-size: 17px;
+        color: var(--text-muted);
+        margin: 0;
+        max-width: 720px;
+        line-height: 1.55;
+      }
+
+      /* ===== Prose ===== */
+      .prose {
+        max-width: 760px;
+      }
+      .prose p {
+        font-size: 16px;
+        color: var(--text);
+        margin: 0 0 16px;
+      }
+      .prose strong {
+        color: var(--text);
+      }
+      .prose code {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.88em;
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        padding: 1px 6px;
+        border-radius: 5px;
+      }
+      .prose a {
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px dashed currentColor;
+      }
+      .prose a:hover {
+        border-bottom-style: solid;
+      }
+      .prose h3 {
+        margin-top: 36px;
+        margin-bottom: 10px;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .prose h4 {
+        margin: 24px 0 8px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      /* ===== Diagram card ===== */
+      .diagram {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        margin: 28px 0;
+        overflow-x: auto;
+      }
+      .diagram-caption {
+        font-size: 13px;
+        color: var(--text-faint);
+        text-align: center;
+        margin-top: 14px;
+      }
+      .mermaid {
+        text-align: center;
+      }
+      .mermaid svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* ===== Code block ===== */
+      pre.code {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 16px 18px;
+        overflow-x: auto;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 16px 0;
+      }
+      pre.code .c { color: var(--text-faint); }
+      pre.code .k { color: #c084fc; }
+      pre.code .s { color: #86efac; }
+      pre.code .n { color: var(--text); }
+
+      /* ===== Sub-section card ===== */
+      .arch-block {
+        margin-bottom: 56px;
+      }
+      .arch-block:last-child {
+        margin-bottom: 0;
+      }
+      .arch-block h3 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .arch-block h3 .pill {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: var(--accent-glow);
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .arch-block > p {
+        color: var(--text-muted);
+        margin: 0 0 18px;
+        font-size: 15px;
+        max-width: 720px;
+      }
+
+      /* ===== Tech stack table ===== */
+      .stack-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .stack-table th,
+      .stack-table td {
+        text-align: left;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        vertical-align: top;
+      }
+      .stack-table tr:last-child td {
+        border-bottom: none;
+      }
+      .stack-table th {
+        background: var(--bg-3);
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .stack-table td:first-child {
+        white-space: nowrap;
+        font-weight: 600;
+        color: var(--text);
+        width: 1%;
+      }
+      .stack-table td:nth-child(2) {
+        white-space: nowrap;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        color: var(--accent);
+        font-size: 13px;
+      }
+      .stack-table td:last-child {
+        color: var(--text-muted);
+      }
+
+      /* ===== Demo grid ===== */
+      .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .demo-card {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .demo-frame {
+        aspect-ratio: 16 / 10;
+        background:
+          linear-gradient(135deg, var(--accent-glow), transparent 70%),
+          repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255, 255, 255, 0.02) 10px,
+            rgba(255, 255, 255, 0.02) 20px
+          );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .demo-frame img,
+      .demo-frame video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .demo-frame .placeholder {
+        font-size: 12px;
+        color: var(--text-faint);
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        padding: 14px 20px;
+        background: var(--bg-3);
+        border: 1px dashed var(--border-strong);
+        border-radius: 6px;
+      }
+      .demo-meta {
+        padding: 14px 18px 16px;
+      }
+      .demo-meta h4 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .demo-meta p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      /* ===== Project tree ===== */
+      .tree {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 13px;
+        line-height: 1.7;
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 20px 24px;
+        color: var(--text-muted);
+        overflow-x: auto;
+        white-space: pre;
+      }
+      .tree .dir { color: var(--accent); font-weight: 600; }
+      .tree .file { color: var(--text); }
+      .tree .note { color: var(--text-faint); font-style: italic; }
+
+      /* ===== Footer ===== */
+      footer {
+        padding: 48px 0 64px;
+        border-top: 1px solid var(--border);
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 13px;
+      }
+      footer a {
+        color: var(--text-muted);
+        text-decoration: none;
+        margin: 0 10px;
+      }
+      footer a:hover {
+        color: var(--text);
+      }
+
+      /* ===== Misc ===== */
+      ::selection {
+        background: var(--accent-glow);
+      }
+      @media (max-width: 720px) {
+        .nav-links {
+          display: none;
+        }
+        section {
+          padding: 64px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">
+          <img src="./assets/marky-icon.png" alt="Marky" />
+          Marky
+        </a>
+        <nav class="nav-links">
+          <a href="#overview">Overview</a>
+          <a href="#hld">Architecture</a>
+          <a href="#deep-dive">Deep dive</a>
+          <a href="#stack">Stack</a>
+          <a href="#layout">Layout</a>
+        </nav>
+        <div class="nav-actions">
+          <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+            <!-- Sun icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          </button>
+          <a class="btn btn-ghost" href="https://github.com/sid8491/marky" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-2.02c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.73-1.52-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.16 1.18a10.93 10.93 0 0 1 5.74 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.18c0 .3.21.66.8.55 4.56-1.52 7.85-5.83 7.85-10.91C23.5 5.65 18.35.5 12 .5z"/></svg>
+            Repo
+          </a>
+          <a class="btn btn-primary" href="https://github.com/sid8491/marky/releases/latest" target="_blank" rel="noopener">
+            Download
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ============ HERO ============ -->
+      <section class="hero">
+        <div class="container">
+          <img class="hero-icon" src="./assets/marky-icon.png" alt="Marky icon" />
+          <h1>A beautiful Markdown editor,<br />built AI-native from day one.</h1>
+          <p class="lede">
+            Marky is a desktop Markdown editor with first-class AI assistance, pixel-perfect PDF
+            export, and a multi-tab side-by-side workspace. This page documents the system design
+            and architecture behind it — a deep look at how an Electron app with three processes,
+            four AI providers, and a unified markdown pipeline fits together.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="https://github.com/sid8491/marky/releases/latest" target="_blank" rel="noopener">
+              Download latest
+            </a>
+            <a class="btn btn-ghost" href="#hld">Read the architecture</a>
+          </div>
+          <div class="hero-meta">
+            <span class="dot"></span>
+            Electron · React 19 · TypeScript · CodeMirror 6 · unified · Anthropic · OpenAI · Google · Ollama
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ OVERVIEW ============ -->
+      <section id="overview">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Overview</span>
+            <h2>What problem does Marky solve?</h2>
+            <p>
+              Existing markdown editors fall into two camps. Web-based tools like StackEdit are
+              gorgeous but live in a browser tab and can't produce pixel-perfect PDFs. Native
+              tools like Typora are powerful but predate the AI inflection point. Marky aims for
+              the intersection: a polished native desktop app where AI assistance is a first-class
+              feature, the rendered preview is the source of truth for export, and the UX feels
+              modern without being noisy.
+            </p>
+          </div>
+
+          <div class="pitch-grid">
+            <div class="pitch-card">
+              <div class="ico">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <h3>Multi-tab, side-by-side</h3>
+              <p>
+                Each open file gets its own editor, preview, view-mode, and scroll position.
+                Dirty indicator, drag-reorder, middle-click close, command palette.
+              </p>
+            </div>
+            <div class="pitch-card">
+              <div class="ico">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+              </div>
+              <h3>AI on demand</h3>
+              <p>
+                Ghost-text continuations on <code>Ctrl+J</code>, Gmail-style selection refine
+                toolbar with streaming Accept / Reject / Try-again. Four providers.
+              </p>
+            </div>
+            <div class="pitch-card">
+              <div class="ico">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+              </div>
+              <h3>Pixel-perfect PDF</h3>
+              <p>
+                Export uses the same Chromium that renders the preview — no second markdown
+                engine to drift. What you see is what your PDF is.
+              </p>
+            </div>
+            <div class="pitch-card">
+              <div class="ico">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <h3>Privacy-first keys</h3>
+              <p>
+                API keys never reach the renderer. Encrypted at rest with the OS keychain
+                (DPAPI / Keychain / libsecret) via Electron's <code>safeStorage</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DEMOS ============ -->
+      <section id="demos">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">In action</span>
+            <h2>See it work</h2>
+            <p>
+              Short captures of the features that don't translate to a screenshot. Drop your own
+              GIFs into <code>docs/assets/</code> with the filenames below to replace the
+              placeholders.
+            </p>
+          </div>
+          <div class="demo-grid">
+            <div class="demo-card">
+              <div class="demo-frame">
+                <div class="placeholder">docs/assets/demo-toolbar.gif</div>
+              </div>
+              <div class="demo-meta">
+                <h4>Formatting toolbar</h4>
+                <p>Heading dropdown, bold/italic toggle, table grid-picker, math, mermaid.</p>
+              </div>
+            </div>
+            <div class="demo-card">
+              <div class="demo-frame">
+                <div class="placeholder">docs/assets/demo-ai-ghost.gif</div>
+              </div>
+              <div class="demo-meta">
+                <h4>AI ghost-text completion</h4>
+                <p>Press Ctrl+J → suggestion appears as gray text → Tab to accept.</p>
+              </div>
+            </div>
+            <div class="demo-card">
+              <div class="demo-frame">
+                <div class="placeholder">docs/assets/demo-ai-refine.gif</div>
+              </div>
+              <div class="demo-meta">
+                <h4>Selection refine toolbar</h4>
+                <p>Select text → choose Rewrite / Shorter / Grammar / Tone → streaming replace.</p>
+              </div>
+            </div>
+            <div class="demo-card">
+              <div class="demo-frame">
+                <div class="placeholder">docs/assets/demo-pdf.gif</div>
+              </div>
+              <div class="demo-meta">
+                <h4>Pixel-perfect PDF export</h4>
+                <p>Ctrl+E → hidden Chromium window renders preview → printToPDF → save.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ HLD ============ -->
+      <section id="hld">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">High-level design</span>
+            <h2>Three processes, one app.</h2>
+            <p>
+              Marky follows Electron's standard tri-process model with strict security defaults.
+              The renderer never touches Node, the main process never touches React, and a tiny
+              typed bridge in the middle carries every cross-boundary call.
+            </p>
+          </div>
+
+          <div class="diagram">
+            <pre class="mermaid">
+flowchart TB
+  classDef main fill:#1a1c26,stroke:#818cf8,stroke-width:1.5px,color:#ebebef
+  classDef preload fill:#1a1c26,stroke:#fcd34d,stroke-width:1.5px,color:#ebebef
+  classDef renderer fill:#1a1c26,stroke:#86efac,stroke-width:1.5px,color:#ebebef
+  classDef external fill:#0e1018,stroke:#888a99,stroke-dasharray:4 4,color:#b4b6c2
+
+  subgraph Main["Main Process — Node.js (privileged)"]
+    direction TB
+    Window["BrowserWindow<br/>frameless"]
+    FileIO["File I/O<br/>open/save/watch"]
+    PDFGen["PDF Export<br/>printToPDF"]
+    AIRouter["AI Router<br/>4 providers"]
+    Updater["electron-updater<br/>auto-update"]
+    Vault["safeStorage<br/>OS keychain"]
+  end
+
+  subgraph Preload["Preload — contextBridge"]
+    Bridge["window.marky<br/>typed surface"]
+  end
+
+  subgraph Renderer["Renderer — Chromium (sandboxed)"]
+    direction TB
+    React["React 19 UI"]
+    CM["CodeMirror 6<br/>editor + extensions"]
+    Pipeline["unified pipeline<br/>remark → rehype<br/>Shiki, KaTeX, Mermaid"]
+    Stores["Zustand stores<br/>tabs · settings · ai · recent · toasts"]
+  end
+
+  Renderer -- "ipcRenderer.invoke/send" --> Bridge
+  Bridge -- "ipcMain.handle/on" --> Main
+
+  AIRouter -. "HTTPS streaming" .-> LLM["LLM Providers<br/>Anthropic · OpenAI · Google · Ollama"]
+  FileIO -. fs --> Disk[("Local disk<br/>.md files")]
+  Vault -. encrypt/decrypt .-> Keychain[("OS Keychain")]
+  Updater -. checks .-> GH[("GitHub Releases")]
+  PDFGen -. spawn hidden .-> Hidden["Hidden BrowserWindow<br/>renders preview HTML"]
+
+  class Main main
+  class Preload preload
+  class Renderer renderer
+  class LLM,Disk,Keychain,GH,Hidden external
+            </pre>
+            <div class="diagram-caption">Process boundaries and external dependencies.</div>
+          </div>
+
+          <div class="prose">
+            <h3>The three-process contract</h3>
+            <p>
+              <strong>Main process</strong> owns everything that requires Node: native dialogs,
+              the filesystem, OS keychain access, the auto-updater, and outbound LLM API calls.
+              It is the only place where API keys are decrypted, the only place where files are
+              read or written, and the only place where the PDF export's hidden Chromium window
+              is spawned.
+            </p>
+            <p>
+              <strong>Renderer process</strong> is a sandboxed Chromium tab running the React UI,
+              CodeMirror, and the markdown rendering pipeline. <code>contextIsolation</code> is
+              on, <code>nodeIntegration</code> is off, and <code>sandbox</code> is enabled —
+              there is no <code>require</code> available in renderer code. Everything that needs
+              the OS goes through the bridge.
+            </p>
+            <p>
+              <strong>Preload</strong> is the type-checked surface area between the two. A single
+              file (<code>src/preload/index.ts</code>) uses <code>contextBridge</code> to expose
+              a <code>window.marky</code> object with one method per IPC channel. The channels
+              and TypeScript interfaces live in <code>src/shared/ipc-contract.ts</code>, so both
+              sides import the same source of truth.
+            </p>
+
+            <h3>Why this matters</h3>
+            <p>
+              The boundary is what makes the privacy-first key story possible. When the user
+              pastes an Anthropic API key into the Settings modal, the renderer sends the
+              plaintext to <code>ipcRenderer.invoke('ai:key:set', 'anthropic', key)</code>.
+              Main encrypts it with <code>safeStorage</code> and stores it as base64 in
+              <code>ai-settings.json</code>. When an AI call fires later, main decrypts in memory,
+              calls the provider, streams chunks back via
+              <code>webContents.send('ai:stream:event', id, { type: 'chunk', text })</code> —
+              and the renderer never sees the key.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ARCH DEEP DIVES ============ -->
+      <section id="deep-dive">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Architecture deep-dive</span>
+            <h2>How each subsystem actually works.</h2>
+            <p>
+              Five core flows, each with a sequence diagram. Together these cover ~80% of the
+              code's purpose. Treat each as a tour: start with the diagram, then read the prose,
+              then jump into the linked files in the repo.
+            </p>
+          </div>
+
+          <!-- AI streaming -->
+          <div class="arch-block">
+            <h3>AI streaming <span class="pill">cross-process</span></h3>
+            <p>
+              All AI calls are bidirectional streams that cross the process boundary, with
+              cancellation. The renderer fires a request; main aborts a previous in-flight stream
+              with the same id, opens a new provider connection, and pumps chunks back as IPC
+              events. Each provider (Anthropic, OpenAI, Google, Ollama) implements the same
+              async-iterator interface, so the router stays uniform.
+            </p>
+            <div class="diagram">
+              <pre class="mermaid">
+sequenceDiagram
+  actor User
+  participant R as Renderer<br/>(SelectionToolbar)
+  participant P as Preload<br/>(window.marky.ai)
+  participant M as Main<br/>(ipc/ai.ts)
+  participant Prov as Provider SDK
+  participant API as LLM API
+
+  User->>R: select text → "Rewrite"
+  R->>R: build AIChatRequest (prompts.ts)
+  R->>P: stream(id, request, onEvent)
+  P->>M: ipcRenderer.invoke('ai:stream:start', id, req)
+  M->>M: new AbortController()
+  M->>Prov: provider.stream(req, signal)
+  Prov->>API: HTTP POST (stream: true)
+  loop streaming
+    API-->>Prov: SSE chunk
+    Prov-->>M: yield text
+    M-->>P: webContents.send('ai:stream:event', id, {chunk})
+    P-->>R: callback(event)
+    R->>R: dispatch CM transaction → replace selection
+  end
+  API-->>Prov: done
+  Prov-->>M: generator return
+  M-->>R: ai:stream:event {done}
+  User->>R: Accept / Reject
+  R->>R: keep or restore original text
+              </pre>
+              <div class="diagram-caption">AI selection-refine: renderer → main → provider, streaming chunks back.</div>
+            </div>
+          </div>
+
+          <!-- PDF export -->
+          <div class="arch-block">
+            <h3>Pixel-perfect PDF export <span class="pill">core differentiator</span></h3>
+            <p>
+              The fundamental design choice: <em>use the same engine for preview and export</em>.
+              On <code>Ctrl+E</code> the renderer rebuilds the HTML through the same unified
+              pipeline, hydrates Mermaid blocks to inline SVG, inlines preview CSS plus KaTeX
+              CSS, and hands the document to main. Main spawns a hidden, sandboxed
+              <code>BrowserWindow</code>, loads the HTML via a data URL, calls
+              <code>webContents.printToPDF</code>, and writes the buffer to disk.
+            </p>
+            <div class="diagram">
+              <pre class="mermaid">
+sequenceDiagram
+  actor User
+  participant R as Renderer
+  participant M as Main<br/>(ipc/pdf.ts)
+  participant H as Hidden BrowserWindow
+
+  User->>R: Ctrl+E
+  R->>R: renderMarkdown(tab.content)
+  R->>R: resolveMermaid(html, dark) → SVG inline
+  R->>R: wrap with print CSS + KaTeX CSS
+  R->>M: exportPdf({ html, defaultName, dark })
+  M->>User: dialog.showSaveDialog
+  User-->>M: filePath
+  M->>H: new BrowserWindow({ show: false })
+  H->>H: loadURL('data:text/html,' + encoded)
+  Note over H: ~150 ms for fonts/layout to settle
+  M->>H: webContents.printToPDF(opts)
+  H-->>M: PDF Buffer
+  M->>M: fs.writeFile(filePath, buffer)
+  M-->>R: { canceled: false, path }
+  H->>H: destroy()
+              </pre>
+              <div class="diagram-caption">Same Chromium → same rendering. No second markdown engine to drift.</div>
+            </div>
+          </div>
+
+          <!-- Auto-update -->
+          <div class="arch-block">
+            <h3>Auto-update <span class="pill">production-only</span></h3>
+            <p>
+              <code>electron-updater</code> checks the GitHub Releases <code>latest.yml</code>
+              manifest five seconds after launch, downloads the new installer in the background
+              (using a blockmap delta when possible), and surfaces a toast asking the user to
+              restart. The renderer can also trigger a manual check from
+              Settings → About → "Check for updates."
+            </p>
+            <div class="diagram">
+              <pre class="mermaid">
+sequenceDiagram
+  participant App as App<br/>(on launch)
+  participant U as electron-updater
+  participant GH as GitHub Releases
+  participant R as Renderer
+  participant User
+
+  App->>App: setTimeout 5s
+  App->>U: autoUpdater.checkForUpdates()
+  U->>GH: GET /latest.yml
+  GH-->>U: { version, url, sha512 }
+  alt new version available
+    U-->>App: emit 'update-available'
+    App->>R: webContents.send('update:event', {available, version})
+    U->>GH: GET installer (+ .blockmap for delta)
+    GH-->>U: bytes
+    U-->>App: emit 'update-downloaded'
+    App->>R: webContents.send('update:event', {downloaded})
+    R->>User: toast "Marky x.y.z is ready — Restart now"
+    User->>R: click Restart
+    R->>App: ipcRenderer.send('update:install')
+    App->>U: autoUpdater.quitAndInstall()
+  else up to date
+    U-->>App: emit 'update-not-available'
+    App->>R: webContents.send('update:event', {not-available})
+  end
+              </pre>
+              <div class="diagram-caption">Manual check ("Check for updates" button) shares the same event pipeline.</div>
+            </div>
+          </div>
+
+          <!-- File associations -->
+          <div class="arch-block">
+            <h3>File associations & "Open With" <span class="pill">cross-platform</span></h3>
+            <p>
+              When the user installs Marky, electron-builder writes platform-specific bindings
+              for <code>.md</code>, <code>.markdown</code>, <code>.mdx</code>. macOS adds the
+              entries to <code>Info.plist</code>; Windows NSIS writes registry keys; Linux
+              ships a <code>.desktop</code> file with MIME associations. Double-clicking a file
+              then routes through one of three OS-specific paths, all funneling to the same
+              renderer flow.
+            </p>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  classDef plat fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  classDef step fill:#0e1018,stroke:#888a99,color:#b4b6c2
+
+  Finder["Finder<br/>double-click .md"]:::plat --> OpenFile["open-file event<br/>(macOS-only)"]:::step
+  Explorer["Explorer<br/>double-click .md"]:::plat --> Argv["process.argv<br/>(Win/Linux)"]:::step
+  Running["Already running<br/>second instance"]:::plat --> Second["second-instance event<br/>w/ argv"]:::step
+
+  OpenFile --> Queue["queueFileFromOs(path)<br/>reads + buffers"]:::step
+  Argv --> Queue
+  Second --> Queue
+
+  Queue -->|window ready| Send["webContents.send<br/>'file:open-from-os'"]:::step
+  Queue -->|window not ready| Pending[("pendingFromOs[]")]
+  Pending -. "renderer pulls" .-> Get["files.getPending()"]:::step
+
+  Send --> Open["openFile(file) + recent.add(path)"]:::plat
+  Get --> Open
+              </pre>
+              <div class="diagram-caption">Three OS paths → one queue → one openFile + recent-files flow.</div>
+            </div>
+          </div>
+
+          <!-- Editor/preview -->
+          <div class="arch-block">
+            <h3>Editor & preview pipeline <span class="pill">renderer-only</span></h3>
+            <p>
+              CodeMirror 6 hosts the editor with a stack of custom extensions: image paste,
+              ghost-text (AI), selection tracker (for the refine toolbar), scroll-sync, and the
+              base markdown grammar. The preview pane uses
+              <a href="https://unifiedjs.com/">unified</a> with a remark → rehype chain:
+              <code>remark-gfm</code>, <code>remark-math</code> → KaTeX, custom Mermaid block
+              extractor, then Shiki for code highlighting with dual themes (CSS variables, so
+              dark mode switches without re-parsing). Mermaid is dynamically imported the first
+              time a diagram appears.
+            </p>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  classDef io fill:#1a1c26,stroke:#818cf8,color:#ebebef
+  classDef proc fill:#0e1018,stroke:#86efac,color:#ebebef
+
+  Type["User types"]:::io --> Doc[("CodeMirror doc")]:::io
+  Doc -- "updateListener (debounced 120ms)" --> Tabs[("Zustand: tab.content")]:::io
+  Tabs --> Pipeline
+
+  subgraph Pipeline["Preview pipeline (renderer)"]
+    direction LR
+    A[remark-parse] --> B[remark-gfm]
+    B --> C[remark-math]
+    C --> D[remark-rehype]
+    D --> E[rehype-mermaid-extract]
+    E --> F[rehype-katex]
+    F --> G[rehype-shiki<br/>dual theme]
+    G --> H[rehype-stringify]
+  end
+
+  Pipeline --> HTML["HTML string"]:::proc
+  HTML --> DOM["dangerouslySetInnerHTML<br/>+ hydrateMermaidBlocks"]:::proc
+  DOM --> View["Live preview"]:::io
+              </pre>
+              <div class="diagram-caption">Editor → debounced unified pipeline → DOM. Mermaid hydrates lazily.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ STACK ============ -->
+      <section id="stack">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Tech stack — the decisions</span>
+            <h2>Why these choices, not the alternatives.</h2>
+            <p>
+              The list of libraries is easy to find in <code>package.json</code>. What's harder
+              to recover is why each was picked over the obvious alternative. Here's the reasoning.
+            </p>
+          </div>
+          <table class="stack-table">
+            <thead>
+              <tr>
+                <th style="width: 22%">Decision</th>
+                <th style="width: 22%">Chose</th>
+                <th>Why over the alternative</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Runtime</td>
+                <td>Electron</td>
+                <td>
+                  Picked over <strong>Tauri</strong> specifically for
+                  <code>webContents.printToPDF</code>. Tauri uses the system webview (WebView2,
+                  WKWebView, WebKitGTK), which means PDF output drifts between platforms —
+                  especially on Linux. Electron bundles Chromium, so the PDF matches the preview
+                  pixel-for-pixel on all three OSes. The cost is ~100&nbsp;MB binary; the
+                  benefit is the headline feature works.
+                </td>
+              </tr>
+              <tr>
+                <td>Editor</td>
+                <td>CodeMirror 6</td>
+                <td>
+                  Picked over <strong>Monaco</strong>. Monaco is built for code, has a heavy
+                  worker model, and its markdown experience is a sideshow. CodeMirror 6 has a
+                  first-class extension API, ~10× smaller bundle, and a strong markdown grammar.
+                  Ghost-text and selection-tracking are clean to implement as CM 6 extensions.
+                </td>
+              </tr>
+              <tr>
+                <td>Markdown engine</td>
+                <td>unified · remark · rehype</td>
+                <td>
+                  Picked over <strong>markdown-it</strong>. unified's AST-pass model is the only
+                  reasonable way to inject the Mermaid-extraction pass cleanly between
+                  <code>remark-rehype</code> and <code>rehype-shiki</code>. Plugins for GFM,
+                  math, KaTeX, Shiki all compose without forks.
+                </td>
+              </tr>
+              <tr>
+                <td>State</td>
+                <td>Zustand</td>
+                <td>
+                  Picked over <strong>Redux Toolkit</strong>. The state tree is ~7 small stores
+                  (tabs, settings, recent, toasts, ai). RTK's slices/reducers/middlewares would
+                  be 5× the code for the same result. Zustand also exposes a stable
+                  <code>getState()</code> outside React, which I use heavily from CodeMirror
+                  extensions where there's no hook context.
+                </td>
+              </tr>
+              <tr>
+                <td>AI key storage</td>
+                <td>Electron safeStorage</td>
+                <td>
+                  Picked over <strong>keytar</strong>. keytar is a native module that needs
+                  recompilation per Electron version; <code>safeStorage</code> is built into
+                  Electron, calls the same OS APIs (DPAPI on Windows, Keychain on macOS,
+                  libsecret on Linux), and ships zero extra binaries.
+                </td>
+              </tr>
+              <tr>
+                <td>Build / dev</td>
+                <td>electron-vite</td>
+                <td>
+                  Picked over <strong>electron-forge</strong>. electron-vite gives one config
+                  for main + preload + renderer with HMR for the renderer, ESM main, and no
+                  custom webpack setup. Plays nicely with Tailwind v4 plugin.
+                </td>
+              </tr>
+              <tr>
+                <td>CSS</td>
+                <td>Tailwind v4 + tokens</td>
+                <td>
+                  CSS variables (<code>--surface-bg</code>, <code>--surface-text</code>, etc.)
+                  drive theme switching without a re-render; Tailwind utilities handle layout.
+                  Theme toggle flips one class on <code>&lt;html&gt;</code> and the whole UI
+                  recolours via cascade.
+                </td>
+              </tr>
+              <tr>
+                <td>AI providers</td>
+                <td>Anthropic · OpenAI · Google · Ollama</td>
+                <td>
+                  Provider abstraction is a single async generator interface. Each provider file
+                  is ~30 lines (Ollama uses native fetch; the others use their official SDKs).
+                  Adding a new provider takes one file and one entry in the router.
+                </td>
+              </tr>
+              <tr>
+                <td>Auto-update</td>
+                <td>electron-updater + GitHub Releases</td>
+                <td>
+                  Releases are cut by pushing a git tag; the GitHub Actions workflow builds
+                  three platforms in parallel, publishes to a draft release, and a final job
+                  promotes it. <code>electron-updater</code> reads <code>latest.yml</code> from
+                  the release. No separate update server.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ PROJECT LAYOUT ============ -->
+      <section id="layout">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Project layout</span>
+            <h2>Where to find what.</h2>
+            <p>
+              The folder structure mirrors the three-process model. Anything inside
+              <code>src/main</code> runs in Node; anything in <code>src/renderer</code> runs in
+              Chromium; <code>src/shared</code> has the typed IPC contract and pure types both
+              sides import.
+            </p>
+          </div>
+          <pre class="tree"><span class="dir">src/</span>
+├── <span class="dir">main/</span>                           <span class="note">// Electron main — privileged, Node.js</span>
+│   ├── <span class="file">index.ts</span>                   <span class="note">// app lifecycle, single-instance lock, CSP, IPC wiring</span>
+│   ├── <span class="file">window.ts</span>                  <span class="note">// frameless BrowserWindow, traffic-light position, dev DevTools</span>
+│   ├── <span class="dir">ipc/</span>
+│   │   ├── <span class="file">window.ts</span>              <span class="note">// minimize/maximize/close, app:version</span>
+│   │   ├── <span class="file">files.ts</span>               <span class="note">// open/save/watch dialogs, image-save, pendingFromOs queue</span>
+│   │   ├── <span class="file">pdf.ts</span>                 <span class="note">// hidden BrowserWindow + printToPDF</span>
+│   │   ├── <span class="file">ai.ts</span>                  <span class="note">// stream router + AbortController per request</span>
+│   │   └── <span class="file">updates.ts</span>             <span class="note">// electron-updater wrapper, dev no-op</span>
+│   └── <span class="dir">ai/</span>
+│       ├── <span class="file">settings.ts</span>            <span class="note">// safeStorage encrypt/decrypt, JSON persistence</span>
+│       ├── <span class="file">anthropic.ts</span>           <span class="note">// @anthropic-ai/sdk wrapper</span>
+│       ├── <span class="file">openai.ts</span>              <span class="note">// openai SDK wrapper</span>
+│       ├── <span class="file">google.ts</span>              <span class="note">// @google/genai wrapper</span>
+│       └── <span class="file">ollama.ts</span>              <span class="note">// native fetch, /api/chat SSE-like NDJSON</span>
+│
+├── <span class="dir">preload/</span>                        <span class="note">// contextBridge — typed surface</span>
+│   ├── <span class="file">index.ts</span>                   <span class="note">// exposes window.marky{ files, ai, updates, ... }</span>
+│   └── <span class="file">index.d.ts</span>
+│
+├── <span class="dir">shared/</span>                         <span class="note">// imported by both main and renderer</span>
+│   ├── <span class="file">ipc-contract.ts</span>            <span class="note">// IPC channel names + MarkyApi interface</span>
+│   ├── <span class="file">types.ts</span>                   <span class="note">// FileReadResult, ExportPdfOptions, ...</span>
+│   └── <span class="file">ai.ts</span>                      <span class="note">// AIProvider, AISettings, AIStreamEvent</span>
+│
+└── <span class="dir">renderer/</span>                       <span class="note">// React + CodeMirror, sandboxed</span>
+    ├── <span class="file">index.html</span>
+    └── <span class="dir">src/</span>
+        ├── <span class="file">App.tsx</span>                <span class="note">// composes hooks + layout shell</span>
+        ├── <span class="file">main.tsx</span>
+        ├── <span class="dir">components/</span>
+        │   ├── <span class="file">TitleBar.tsx</span>       <span class="note">// custom frameless chrome + double-click-to-max</span>
+        │   ├── <span class="file">TabBar.tsx</span>         <span class="note">// drag-reorder, middle-click close</span>
+        │   ├── <span class="file">EditorPane.tsx</span>     <span class="note">// CM6 host + formatting toolbar + selection toolbar</span>
+        │   ├── <span class="file">EditorToolbar.tsx</span>  <span class="note">// shared Dropdown + Heading/Math/Table menus</span>
+        │   ├── <span class="file">PreviewPane.tsx</span>    <span class="note">// unified pipeline + Mermaid hydrate</span>
+        │   ├── <span class="file">SplitPane.tsx</span>      <span class="note">// resizable divider</span>
+        │   ├── <span class="file">SelectionToolbar.tsx</span> <span class="note">// Gmail-style refine actions, streaming replace</span>
+        │   ├── <span class="file">CommandPalette.tsx</span> <span class="note">// Ctrl+K fuzzy search</span>
+        │   ├── <span class="file">SettingsModal.tsx</span>  <span class="note">// AI keys, About, theme</span>
+        │   ├── <span class="file">Toaster.tsx</span>
+        │   ├── <span class="file">StatusBar.tsx</span>
+        │   └── <span class="file">EmptyState.tsx</span>
+        ├── <span class="dir">editor/</span>                 <span class="note">// CodeMirror 6 extensions</span>
+        │   ├── <span class="file">theme.ts</span>
+        │   ├── <span class="file">imagePaste.ts</span>
+        │   ├── <span class="file">ghostText.ts</span>       <span class="note">// inline AI completion ViewPlugin</span>
+        │   ├── <span class="file">selectionTracker.ts</span>
+        │   ├── <span class="file">scrollSync.ts</span>      <span class="note">// editor ↔ preview sync channel</span>
+        │   ├── <span class="file">markdownCommands.ts</span> <span class="note">// toggleWrap, setHeadingLevel, insert table, etc.</span>
+        │   └── <span class="file">activeView.ts</span>      <span class="note">// global reference to focused editor view</span>
+        ├── <span class="dir">preview/</span>
+        │   ├── <span class="file">pipeline.ts</span>        <span class="note">// unified processor + rehype-mermaid-extract</span>
+        │   ├── <span class="file">mermaid.ts</span>         <span class="note">// dynamic import + hydrateMermaidBlocks</span>
+        │   └── <span class="file">styles.css</span>         <span class="note">// preview typography + Shiki dual-theme vars</span>
+        ├── <span class="dir">store/</span>                  <span class="note">// Zustand</span>
+        │   ├── <span class="file">tabs.ts</span>
+        │   ├── <span class="file">settings.ts</span>
+        │   ├── <span class="file">recent.ts</span>
+        │   ├── <span class="file">toasts.ts</span>
+        │   └── <span class="file">ai.ts</span>
+        ├── <span class="dir">ai/</span>
+        │   ├── <span class="file">client.ts</span>          <span class="note">// IPC stream wrapper</span>
+        │   └── <span class="file">prompts.ts</span>         <span class="note">// system prompts + refine action templates</span>
+        ├── <span class="dir">hooks/</span>
+        │   ├── <span class="file">useFileCommands.ts</span>
+        │   ├── <span class="file">useViewShortcuts.ts</span>
+        │   ├── <span class="file">useFileWatching.ts</span>
+        │   ├── <span class="file">useFileAssociations.ts</span>
+        │   └── <span class="file">useUpdates.ts</span>
+        └── <span class="dir">lib/</span>
+            ├── <span class="file">cn.ts</span>              <span class="note">// clsx + tailwind-merge</span>
+            ├── <span class="file">id.ts</span>
+            └── <span class="file">exportPdf.ts</span>       <span class="note">// renderer-side PDF orchestration</span>
+</pre>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <a href="https://github.com/sid8491/marky">GitHub</a>
+        ·
+        <a href="https://github.com/sid8491/marky/releases">Releases</a>
+        ·
+        <a href="https://github.com/sid8491/marky/issues">Issues</a>
+        ·
+        <a href="https://github.com/sid8491/marky/blob/master/CONTRIBUTING.md">Contributing</a>
+        ·
+        <a href="https://github.com/sid8491/marky/blob/master/LICENSE">MIT License</a>
+        <p style="margin-top: 18px;">Built with care. Designed in dark mode first.</p>
+      </div>
+    </footer>
+
+    <!-- Mermaid -->
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
+
+      const isDark = () => document.documentElement.dataset.theme !== 'light'
+
+      function renderMermaid() {
+        const config = {
+          startOnLoad: false,
+          theme: isDark() ? 'dark' : 'default',
+          fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif",
+          themeVariables: isDark()
+            ? {
+                background: '#14151d',
+                primaryColor: '#1a1c26',
+                primaryTextColor: '#ebebef',
+                primaryBorderColor: '#818cf8',
+                lineColor: '#888a99',
+                secondaryColor: '#14151d',
+                tertiaryColor: '#0e1018',
+                noteBkgColor: '#1a1c26',
+                noteTextColor: '#ebebef'
+              }
+            : {
+                primaryColor: '#ffffff',
+                primaryTextColor: '#1a1c26',
+                primaryBorderColor: '#6366f1',
+                lineColor: '#5e6171'
+              }
+        }
+        mermaid.initialize(config)
+        // Reset any previously-rendered diagrams so we can re-render on theme switch
+        document.querySelectorAll('pre.mermaid').forEach((el) => {
+          if (el.dataset.originalSource) {
+            el.removeAttribute('data-processed')
+            el.innerHTML = el.dataset.originalSource
+          } else {
+            el.dataset.originalSource = el.innerHTML
+          }
+        })
+        mermaid.run({ querySelector: 'pre.mermaid' })
+      }
+
+      renderMermaid()
+      window.__rerenderMermaid = renderMermaid
+    </script>
+
+    <!-- Theme toggle -->
+    <script>
+      ;(function () {
+        const root = document.documentElement
+        const KEY = 'marky-docs-theme'
+
+        function setTheme(t) {
+          root.dataset.theme = t
+          try {
+            localStorage.setItem(KEY, t)
+          } catch {}
+          if (window.__rerenderMermaid) window.__rerenderMermaid()
+        }
+
+        const stored = (function () {
+          try {
+            return localStorage.getItem(KEY)
+          } catch {
+            return null
+          }
+        })()
+        if (stored === 'light' || stored === 'dark') {
+          root.dataset.theme = stored
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+          setTheme(root.dataset.theme === 'light' ? 'dark' : 'light')
+        })
+      })()
+    </script>
+  </body>
+</html>
