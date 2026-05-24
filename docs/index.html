@@ -515,8 +515,9 @@
       .demo-frame video {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         display: block;
+        background: var(--bg);
       }
       .demo-frame .placeholder {
         font-size: 12px;
@@ -720,7 +721,7 @@
           <div class="demo-grid">
             <div class="demo-card">
               <div class="demo-frame">
-                <div class="placeholder">docs/assets/demo-toolbar.gif</div>
+                <img src="./assets/demo-toolbar.gif" alt="Formatting toolbar in action" loading="lazy" />
               </div>
               <div class="demo-meta">
                 <h4>Formatting toolbar</h4>
@@ -729,7 +730,7 @@
             </div>
             <div class="demo-card">
               <div class="demo-frame">
-                <div class="placeholder">docs/assets/demo-ai-ghost.gif</div>
+                <img src="./assets/demo-ai-ghost.gif" alt="AI ghost-text completion" loading="lazy" />
               </div>
               <div class="demo-meta">
                 <h4>AI ghost-text completion</h4>
@@ -738,7 +739,7 @@
             </div>
             <div class="demo-card">
               <div class="demo-frame">
-                <div class="placeholder">docs/assets/demo-ai-refine.gif</div>
+                <img src="./assets/demo-ai-refine.gif" alt="Selection refine toolbar" loading="lazy" />
               </div>
               <div class="demo-meta">
                 <h4>Selection refine toolbar</h4>
@@ -747,7 +748,7 @@
             </div>
             <div class="demo-card">
               <div class="demo-frame">
-                <div class="placeholder">docs/assets/demo-pdf.gif</div>
+                <img src="./assets/demo-pdf.gif" alt="PDF export" loading="lazy" />
               </div>
               <div class="demo-meta">
                 <h4>Pixel-perfect PDF export</h4>
