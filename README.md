@@ -55,11 +55,30 @@ Until code signing is in place, SmartScreen may warn you on first launch — cli
 
 ### macOS
 
-1. Download `Marky-<version>-arm64.dmg` (Apple Silicon) or `Marky-<version>-x64.dmg` (Intel).
+1. Pick the right DMG for your Mac:
+   - **Apple Silicon** (M1/M2/M3/M4 — any Mac sold since late 2020): `Marky-<version>-arm64.dmg`
+   - **Intel-based Macs only**: `Marky-<version>-x64.dmg`
+   - Not sure? Click  → About This Mac. "Chip: Apple M…" → arm64. "Processor: Intel…" → x64.
+   - Installing the Intel build on Apple Silicon works through Rosetta but triggers a translation prompt and runs slower — always prefer the arm64 build on Apple Silicon.
 2. Open the DMG and drag **Marky** to your Applications folder.
 3. Supported: macOS 11 (Big Sur) and newer.
 
-Until the build is notarized, Gatekeeper will block the first launch. Right-click **Marky.app → Open**, then confirm. Once approved, normal launches work.
+**First-launch Gatekeeper warning** ("Apple could not verify Marky is free of malware"):
+
+Marky is unsigned because Apple Developer ID code-signing requires a paid Apple Developer account. macOS therefore blocks the first launch. Pick either workaround — both are one-time:
+
+- **Option A — System Settings (no Terminal):**
+  1. Try to open Marky once and dismiss the warning dialog.
+  2. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the "Marky was blocked" notice. Confirm with your password.
+  3. Open Marky again — it launches and is trusted from then on.
+
+- **Option B — Terminal (one command):**
+  ```bash
+  xattr -dr com.apple.quarantine /Applications/Marky.app
+  ```
+  Strips the download-quarantine flag. Marky opens normally afterward with no further prompts.
+
+> On older macOS (pre-Sequoia 15) the **right-click → Open** trick used to work; Apple removed it in Sequoia, so use one of the two options above instead.
 
 **Quick Look (Space-bar preview)**: macOS Quick Look requires a separate native plugin and is not provided by Marky directly. For inline Space-bar previews of `.md` files in Finder, install the third-party [QLMarkdown](https://github.com/sbarex/QLMarkdown) generator. Marky is still the right tool for editing — set it as the default app for `.md` files under Finder → Get Info → Open With → Change All.
 
