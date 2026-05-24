@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useAi } from '@/store/ai'
 import { startStream, type AIStreamHandle } from '@/ai/client'
-import { buildRefineRequest, type RefineAction } from '@/ai/prompts'
+import { buildContinueRequest, buildRefineRequest, type RefineAction } from '@/ai/prompts'
 import { toast } from '@/store/toasts'
 import { cn } from '@/lib/cn'
 import type { SelectionInfo } from '@/editor/selectionTracker'
@@ -81,19 +81,33 @@ export function SelectionToolbar({
     const view = viewRef.current
     if (!view || !info) return
 
-    const request = buildRefineRequest({
-      provider: settings.provider,
-      model: settings.models[settings.provider],
-      temperature: settings.temperature,
-      action,
-      customInstruction,
-      selection: info.text
-    })
+    // "Continue" appends new text after the selection instead of replacing it.
+    // All other actions rewrite the selection in place.
+    const isContinue = action === 'continue'
 
+    const request = isContinue
+      ? buildContinueRequest({
+          provider: settings.provider,
+          model: settings.models[settings.provider],
+          temperature: settings.temperature,
+          context: info.text
+        })
+      : buildRefineRequest({
+          provider: settings.provider,
+          model: settings.models[settings.provider],
+          temperature: settings.temperature,
+          action,
+          customInstruction,
+          selection: info.text
+        })
+
+    // For "continue" we insert at `info.to` (originalText is empty so
+    // reject() correctly removes the appended text without touching the
+    // original selection). For everything else we replace `info.from..info.to`.
     const state: RefineState = {
       active: true,
-      originalText: info.text,
-      originalFrom: info.from,
+      originalText: isContinue ? '' : info.text,
+      originalFrom: isContinue ? info.to : info.from,
       originalTo: info.to,
       replacement: '',
       streaming: true,
@@ -103,7 +117,7 @@ export function SelectionToolbar({
     setRefine(state)
 
     let buffered = ''
-    let currentTo = info.to
+    let currentTo = state.originalTo
     const handle = startStream(request, (event) => {
       if (event.type === 'chunk') {
         buffered += event.text
