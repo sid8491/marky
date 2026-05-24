@@ -9,7 +9,7 @@ A beautiful cross-platform Markdown editor with first-class AI assistance and pi
 ## Highlights
 
 - **Multi-tab editor** with side-by-side editor/preview, draggable split, `*` dirty indicator, drag-reorder, middle-click close.
-- **Formatting toolbar** above the editor — headings, bold/italic/strike/code, lists, blockquote, links, images, horizontal rule, and an interactive grid-picker for tables. No need to memorize markdown syntax.
+- **Formatting toolbar** above the editor — Heading dropdown (Paragraph + H1–H6), bold/italic/strike/inline-code with proper toggle behavior, lists/task lists, blockquote, links/images, code block, horizontal rule, Math (inline `$x$` + block `$$..$$`), Mermaid diagrams, and an interactive grid-picker for tables. No need to memorize markdown syntax.
 - **AI-native writing** — invoked explicitly, never intrusively.
   - On-demand continuation: press `Ctrl+J` (or use the command palette) to request an AI continuation at the cursor. `Tab` accepts, `Esc` dismisses. Optional auto-suggest as-you-type is available in Settings.
   - Selection refine toolbar (Gmail-style): Rewrite / Shorter / Longer / Grammar / Continue / Tone / Ask AI.

@@ -212,16 +212,12 @@ function Dropdown({
 type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 const HEADING_ITEMS: Array<{ level: HeadingLevel; label: string; sizeClass: string }> = [
   { level: 0, label: 'Paragraph', sizeClass: 'text-sm' },
-  { level: 1, label: 'Heading 1', sizeClass: 'text-xl font-bold' },
-  { level: 2, label: 'Heading 2', sizeClass: 'text-lg font-bold' },
-  { level: 3, label: 'Heading 3', sizeClass: 'text-base font-semibold' },
-  { level: 4, label: 'Heading 4', sizeClass: 'text-sm font-semibold' },
-  { level: 5, label: 'Heading 5', sizeClass: 'text-xs font-semibold' },
-  {
-    level: 6,
-    label: 'Heading 6',
-    sizeClass: 'text-xs font-medium uppercase tracking-wide'
-  }
+  { level: 1, label: 'Heading 1', sizeClass: 'text-2xl font-bold' },
+  { level: 2, label: 'Heading 2', sizeClass: 'text-xl font-bold' },
+  { level: 3, label: 'Heading 3', sizeClass: 'text-lg font-semibold' },
+  { level: 4, label: 'Heading 4', sizeClass: 'text-base font-semibold' },
+  { level: 5, label: 'Heading 5', sizeClass: 'text-sm font-semibold' },
+  { level: 6, label: 'Heading 6', sizeClass: 'text-xs font-semibold' }
 ]
 
 function HeadingMenu({
