@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { X, Check, AlertTriangle, Trash2, Loader2, Download } from 'lucide-react'
 import { useAi } from '@/store/ai'
+import { useSettings } from '@/store/settings'
 import { toast } from '@/store/toasts'
 import { manualCheckForUpdates } from '@/hooks/useUpdates'
 import { cn } from '@/lib/cn'
 import type { AIProvider } from '@shared/ai'
+import type { PdfMarginPreset, PdfPageSize } from '@shared/types'
 
 const PROVIDER_LABELS: Record<AIProvider, string> = {
   anthropic: 'Anthropic (Claude)',
@@ -86,6 +88,8 @@ export function SettingsModal(): React.ReactElement {
 
             <div className="max-h-[70vh] overflow-y-auto p-5">
               <AboutSection />
+
+              <PdfExportSection />
 
               <Section title="AI provider">
                 <Field label="Active provider">
@@ -208,6 +212,62 @@ function AboutSection(): React.ReactElement {
         </button>
       </div>
     </section>
+  )
+}
+
+const PAGE_SIZE_OPTIONS: { value: PdfPageSize; label: string }[] = [
+  { value: 'A4', label: 'A4 (210 × 297 mm)' },
+  { value: 'Letter', label: 'Letter (8.5 × 11 in)' },
+  { value: 'Legal', label: 'Legal (8.5 × 14 in)' },
+  { value: 'A3', label: 'A3 (297 × 420 mm)' },
+  { value: 'A5', label: 'A5 (148 × 210 mm)' },
+  { value: 'Tabloid', label: 'Tabloid (11 × 17 in)' }
+]
+
+const MARGIN_OPTIONS: { value: PdfMarginPreset; label: string }[] = [
+  { value: 'default', label: 'Default (0.6 in)' },
+  { value: 'narrow', label: 'Narrow (0.3 in)' },
+  { value: 'none', label: 'None (0 in)' }
+]
+
+function PdfExportSection(): React.ReactElement {
+  const pdf = useSettings((s) => s.pdf)
+  const setPdf = useSettings((s) => s.setPdf)
+
+  return (
+    <Section title="PDF export">
+      <Field label="Page size">
+        <Select
+          value={pdf.pageSize}
+          onChange={(v) => setPdf({ pageSize: v as PdfPageSize })}
+          options={PAGE_SIZE_OPTIONS}
+        />
+      </Field>
+      <Field label="Margins">
+        <Select
+          value={pdf.margins}
+          onChange={(v) => setPdf({ margins: v as PdfMarginPreset })}
+          options={MARGIN_OPTIONS}
+        />
+      </Field>
+      <Field label="Landscape orientation">
+        <Toggle checked={pdf.landscape} onChange={(v) => setPdf({ landscape: v })} />
+      </Field>
+      <Field label="Print background">
+        <Toggle
+          checked={pdf.printBackground}
+          onChange={(v) => setPdf({ printBackground: v })}
+          description="Include page background colour in the export. Turn off for a plain white background."
+        />
+      </Field>
+      <Field label="Page numbers">
+        <Toggle
+          checked={pdf.displayPageNumbers}
+          onChange={(v) => setPdf({ displayPageNumbers: v })}
+          description="Show 'X / Y' centred at the foot of each page. Forces a minimum 0.5 in vertical margin so the footer doesn't overlap content."
+        />
+      </Field>
+    </Section>
   )
 }
 

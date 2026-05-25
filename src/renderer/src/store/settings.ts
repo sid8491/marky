@@ -1,15 +1,34 @@
 import { create } from 'zustand'
+import type { PdfMarginPreset, PdfPageSize } from '@shared/types'
 
 type Theme = 'light' | 'dark' | 'system'
+
+export interface PdfPrefs {
+  pageSize: PdfPageSize
+  margins: PdfMarginPreset
+  landscape: boolean
+  printBackground: boolean
+  displayPageNumbers: boolean
+}
+
+const DEFAULT_PDF_PREFS: PdfPrefs = {
+  pageSize: 'A4',
+  margins: 'default',
+  landscape: false,
+  printBackground: true,
+  displayPageNumbers: false
+}
 
 interface SettingsState {
   theme: Theme
   resolvedDark: boolean
   syncScroll: boolean
   showLineNumbers: boolean
+  pdf: PdfPrefs
   setTheme: (t: Theme) => void
   toggleSyncScroll: () => void
   toggleLineNumbers: () => void
+  setPdf: (partial: Partial<PdfPrefs>) => void
   applyTheme: () => void
 }
 
@@ -19,6 +38,7 @@ interface PersistedSettings {
   theme?: Theme
   syncScroll?: boolean
   showLineNumbers?: boolean
+  pdf?: Partial<PdfPrefs>
 }
 
 function load(): PersistedSettings {
@@ -49,6 +69,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
     initial.theme === 'light' ? false : initial.theme === 'dark' ? true : systemDark(),
   syncScroll: initial.syncScroll ?? true,
   showLineNumbers: initial.showLineNumbers ?? false,
+  pdf: { ...DEFAULT_PDF_PREFS, ...(initial.pdf ?? {}) },
 
   setTheme: (t) => {
     set({ theme: t })
@@ -68,6 +89,13 @@ export const useSettings = create<SettingsState>((set, get) => ({
       const next = !s.showLineNumbers
       persist({ ...get(), showLineNumbers: next })
       return { showLineNumbers: next }
+    }),
+
+  setPdf: (partial) =>
+    set((s) => {
+      const next = { ...s.pdf, ...partial }
+      persist({ ...get(), pdf: next })
+      return { pdf: next }
     }),
 
   applyTheme: () => {

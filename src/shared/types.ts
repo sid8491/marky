@@ -19,12 +19,17 @@ export interface SaveDialogResult {
   path?: string
 }
 
+export type PdfPageSize = 'A3' | 'A4' | 'A5' | 'Legal' | 'Letter' | 'Tabloid'
+export type PdfMarginPreset = 'default' | 'narrow' | 'none'
+
 export interface ExportPdfOptions {
   html: string
   defaultName?: string
-  pageSize?: 'A4' | 'Letter'
-  margins?: 'default' | 'narrow' | 'none'
+  pageSize?: PdfPageSize
+  margins?: PdfMarginPreset
   printBackground?: boolean
+  landscape?: boolean
+  displayPageNumbers?: boolean
 }
 
 /**

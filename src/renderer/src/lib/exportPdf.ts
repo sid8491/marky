@@ -2,6 +2,7 @@ import previewCss from '../preview/styles.css?raw'
 import katexCss from 'katex/dist/katex.min.css?raw'
 import { renderMarkdown } from '../preview/pipeline'
 import { renderMermaid } from '../preview/mermaid'
+import { useSettings } from '../store/settings'
 
 async function resolveMermaid(html: string, dark: boolean): Promise<string> {
   if (!html.includes('mermaid-block')) return html
@@ -68,11 +69,14 @@ export async function exportToPdf(opts: {
   const html = await renderMarkdown(opts.markdown)
   const resolved = await resolveMermaid(html, opts.dark)
   const doc = buildHtmlDocument(resolved, opts.dark)
+  const pdf = useSettings.getState().pdf
   return window.marky.exportPdf({
     html: doc,
     defaultName: opts.defaultName.replace(/\.(md|markdown|mdx)$/i, '') || 'document',
-    printBackground: true,
-    pageSize: 'A4',
-    margins: 'default'
+    pageSize: pdf.pageSize,
+    margins: pdf.margins,
+    landscape: pdf.landscape,
+    printBackground: pdf.printBackground,
+    displayPageNumbers: pdf.displayPageNumbers
   })
 }
