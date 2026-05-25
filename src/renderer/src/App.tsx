@@ -16,6 +16,8 @@ import { useViewShortcuts } from '@/hooks/useViewShortcuts'
 import { useFileWatching } from '@/hooks/useFileWatching'
 import { useFileAssociations } from '@/hooks/useFileAssociations'
 import { useUpdates } from '@/hooks/useUpdates'
+import { useDraftPersistence } from '@/hooks/useDraftPersistence'
+import { useDraftRestore } from '@/hooks/useDraftRestore'
 
 export function App(): React.ReactElement {
   const tabs = useTabs((s) => s.tabs)
@@ -29,6 +31,8 @@ export function App(): React.ReactElement {
   useFileWatching()
   useFileAssociations()
   useUpdates()
+  useDraftPersistence()
+  useDraftRestore()
 
   useEffect(() => {
     applyTheme()

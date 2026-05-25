@@ -2,7 +2,8 @@ import type {
   FileReadResult,
   OpenFileOptions,
   SaveDialogResult,
-  ExportPdfOptions
+  ExportPdfOptions,
+  Draft
 } from './types'
 import type { AIChatRequest, AIProvider, AISettings, AIStreamEvent } from './ai'
 
@@ -50,6 +51,12 @@ export const IPC = {
   FILE_CHANGED: 'file:changed',
   FILE_GET_PENDING: 'file:get-pending',
   FILE_OPEN_FROM_OS: 'file:open-from-os',
+
+  // crash-recovery drafts
+  DRAFTS_LIST: 'drafts:list',
+  DRAFTS_SAVE: 'drafts:save',
+  DRAFTS_DELETE: 'drafts:delete',
+  DRAFTS_CLEAR_ALL: 'drafts:clear-all',
 
   // export
   EXPORT_PDF: 'export:pdf',
@@ -102,6 +109,13 @@ export interface MarkyApi {
   }
 
   exportPdf: (opts: ExportPdfOptions) => Promise<{ canceled: boolean; path?: string }>
+
+  drafts: {
+    list: () => Promise<Draft[]>
+    save: (draft: Draft) => Promise<void>
+    delete: (draftId: string) => Promise<void>
+    clearAll: () => Promise<void>
+  }
 
   updates: {
     check: () => void
