@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { X, Check, AlertTriangle, Trash2, Loader2, Download } from 'lucide-react'
 import { useAi } from '@/store/ai'
 import { useSettings } from '@/store/settings'
+import { useUpdateStatus, type UpdatePhase } from '@/store/updateStatus'
 import { toast } from '@/store/toasts'
 import { manualCheckForUpdates } from '@/hooks/useUpdates'
 import { cn } from '@/lib/cn'
@@ -172,46 +173,154 @@ export function SettingsModal(): React.ReactElement {
 
 function AboutSection(): React.ReactElement {
   const [version, setVersion] = useState<string | null>(null)
-  const [checking, setChecking] = useState(false)
+  const [clickedCheck, setClickedCheck] = useState(false)
+  const phase = useUpdateStatus((s) => s.phase)
+  const percent = useUpdateStatus((s) => s.percent)
+  const updateVersion = useUpdateStatus((s) => s.version)
+  const errorMessage = useUpdateStatus((s) => s.errorMessage)
 
   useEffect(() => {
     void window.marky.appVersion().then(setVersion)
   }, [])
 
   const handleCheck = (): void => {
-    setChecking(true)
+    setClickedCheck(true)
     manualCheckForUpdates()
-    // The toast lifecycle handles result; clear the local spinner shortly
-    // after the request fires so the button stops looking pending.
-    setTimeout(() => setChecking(false), 1500)
+    // The toast lifecycle handles the result; clear the local spinner shortly
+    // after the request fires so the button stops looking pending if the main
+    // process is silent. The store-driven status line takes over from here.
+    setTimeout(() => setClickedCheck(false), 1500)
   }
+
+  const handleRestart = (): void => window.marky.updates.install()
+
+  const busy = clickedCheck || phase === 'checking' || phase === 'downloading'
 
   return (
     <section className="mb-6">
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
         About
       </h3>
-      <div className="flex items-center justify-between rounded-lg border border-subtle bg-panel/50 p-3">
-        <div>
-          <div className="text-sm font-medium text-default">Marky</div>
-          <div className="mt-0.5 font-mono text-xs text-faint">
-            {version ? `v${version}` : 'loading…'}
+      <div className="rounded-lg border border-subtle bg-panel/50 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-default">Marky</div>
+            <div className="mt-0.5 font-mono text-xs text-faint">
+              {version ? `v${version}` : 'loading…'}
+            </div>
           </div>
-        </div>
-        <button
-          onClick={handleCheck}
-          disabled={checking}
-          className="flex items-center gap-2 rounded-md border border-strong bg-elevated px-3 py-1.5 text-xs font-medium text-default transition-colors hover:bg-panel disabled:opacity-60"
-        >
-          {checking ? (
-            <Loader2 className="size-3.5 animate-spin" />
+          {phase === 'downloaded' ? (
+            <button
+              onClick={handleRestart}
+              className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90"
+            >
+              <Download className="size-3.5" />
+              Restart to install
+            </button>
           ) : (
-            <Download className="size-3.5" />
+            <button
+              onClick={handleCheck}
+              disabled={busy}
+              className="flex items-center gap-2 rounded-md border border-strong bg-elevated px-3 py-1.5 text-xs font-medium text-default transition-colors hover:bg-panel disabled:opacity-60"
+            >
+              {busy ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Download className="size-3.5" />
+              )}
+              Check for updates
+            </button>
           )}
-          Check for updates
-        </button>
+        </div>
+        <UpdateStatusLine
+          phase={phase}
+          percent={percent}
+          version={updateVersion}
+          errorMessage={errorMessage}
+        />
       </div>
     </section>
+  )
+}
+
+function UpdateStatusLine({
+  phase,
+  percent,
+  version,
+  errorMessage
+}: {
+  phase: UpdatePhase
+  percent: number
+  version: string | null
+  errorMessage: string | null
+}): React.ReactElement | null {
+  if (phase === 'idle' || phase === 'not-available') return null
+
+  if (phase === 'checking') {
+    return <StatusRow tone="muted">Checking for updates…</StatusRow>
+  }
+
+  if (phase === 'available') {
+    return (
+      <StatusRow tone="muted">v{version} is available — download starting…</StatusRow>
+    )
+  }
+
+  if (phase === 'downloading') {
+    const clamped = Math.max(0, Math.min(100, Math.round(percent)))
+    return (
+      <div className="mt-3">
+        <div className="mb-1 flex items-center justify-between text-xs">
+          <span className="text-muted">Downloading{version ? ` v${version}` : ''}…</span>
+          <span className="font-mono text-faint">{clamped}%</span>
+        </div>
+        <div
+          role="progressbar"
+          aria-valuenow={clamped}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Update download progress"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-elevated"
+        >
+          <div
+            className="h-full bg-accent transition-[width] duration-150 ease-out"
+            style={{ width: `${clamped}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === 'downloaded') {
+    return (
+      <StatusRow tone="accent">v{version} is downloaded and ready to install.</StatusRow>
+    )
+  }
+
+  // phase === 'error'
+  return (
+    <StatusRow tone="error">Update failed: {errorMessage ?? 'unknown error'}</StatusRow>
+  )
+}
+
+function StatusRow({
+  tone,
+  children
+}: {
+  tone: 'muted' | 'accent' | 'error'
+  children: React.ReactNode
+}): React.ReactElement {
+  return (
+    <div
+      className={cn(
+        'mt-3 text-xs',
+        tone === 'muted' && 'text-muted',
+        tone === 'accent' && 'text-accent',
+        tone === 'error' && 'text-red-500'
+      )}
+    >
+      {children}
+    </div>
   )
 }
 
