@@ -58,7 +58,7 @@ Until code signing is in place, SmartScreen may warn you on first launch — cli
 1. Pick the right DMG for your Mac:
    - **Apple Silicon** (M1/M2/M3/M4 — any Mac sold since late 2020): `Marky-<version>-arm64.dmg`
    - **Intel-based Macs only**: `Marky-<version>-x64.dmg`
-   - Not sure? Click  → About This Mac. "Chip: Apple M…" → arm64. "Processor: Intel…" → x64.
+   - Not sure? Click → About This Mac. "Chip: Apple M…" → arm64. "Processor: Intel…" → x64.
    - Installing the Intel build on Apple Silicon works through Rosetta but triggers a translation prompt and runs slower — always prefer the arm64 build on Apple Silicon.
 2. Open the DMG and drag **Marky** to your Applications folder.
 3. Supported: macOS 11 (Big Sur) and newer.
