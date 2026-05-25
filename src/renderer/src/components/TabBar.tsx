@@ -54,6 +54,7 @@ function TabItem({
           closeTab(tab.id)
         }
       }}
+      title={tab.path ?? 'New file'}
       className={cn(
         'app-no-drag group relative flex h-full max-w-56 min-w-32 shrink-0 cursor-pointer items-center gap-2 border-r border-subtle px-3 text-sm transition-colors',
         active
