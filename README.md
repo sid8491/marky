@@ -146,25 +146,27 @@ The Electron window opens with HMR enabled. Press `Ctrl+K` for the command palet
 
 ## Keyboard shortcuts
 
-| Shortcut         | Action                            |
-| ---------------- | --------------------------------- |
-| `Ctrl+N`         | New file                          |
-| `Ctrl+O`         | Open file                         |
-| `Ctrl+S`         | Save                              |
-| `Ctrl+Shift+S`   | Save as                           |
-| `Ctrl+W`         | Close active tab                  |
-| `Ctrl+E`         | Export to PDF                     |
-| `Ctrl+K`         | Command palette                   |
-| `Ctrl+,`         | Settings                          |
-| `Ctrl+F`         | Find in editor                    |
-| `Ctrl+\`         | Toggle split view                 |
-| `Ctrl+Shift+E`   | Editor only                       |
-| `Ctrl+Shift+V`   | Preview only                      |
-| `Ctrl+J`         | Request AI continuation at cursor |
-| `Ctrl+B`         | Bold (wraps selection)            |
-| `Ctrl+I`         | Italic (wraps selection)          |
-| `Tab` _(editor)_ | Accept ghost-text suggestion      |
-| `Esc` _(editor)_ | Dismiss ghost-text suggestion     |
+| Shortcut                  | Action                            |
+| ------------------------- | --------------------------------- |
+| `Ctrl+N`                  | New file                          |
+| `Ctrl+O`                  | Open file                         |
+| `Ctrl+S`                  | Save                              |
+| `Ctrl+Shift+S`            | Save as                           |
+| `Ctrl+W`                  | Close active tab                  |
+| `Ctrl+E`                  | Export to PDF                     |
+| `Ctrl+K`                  | Command palette                   |
+| `Ctrl+,`                  | Settings                          |
+| `Ctrl+F`                  | Find in editor                    |
+| `Ctrl+\`                  | Toggle split view                 |
+| `Ctrl+Shift+E`            | Editor only                       |
+| `Ctrl+Shift+V`            | Preview only                      |
+| `Ctrl+J`                  | Request AI continuation at cursor |
+| `Ctrl+B`                  | Bold (wraps selection)            |
+| `Ctrl+I`                  | Italic (wraps selection)          |
+| `Ctrl+Z`                  | Undo (editor)                     |
+| `Ctrl+Y` / `Ctrl+Shift+Z` | Redo (editor)                     |
+| `Tab` _(editor)_          | Accept ghost-text suggestion      |
+| `Esc` _(editor)_          | Dismiss ghost-text suggestion     |
 
 On macOS, substitute `Cmd` for `Ctrl`.
 
