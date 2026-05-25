@@ -13,6 +13,10 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     globals: false,
     css: false,
-    restoreMocks: true
+    restoreMocks: true,
+    // Shiki lazily loads its WASM engine + grammars on first use; the cold-start
+    // can blow past the 5s default on slower CI runners (seen on Windows).
+    testTimeout: 20000,
+    hookTimeout: 20000
   }
 })
