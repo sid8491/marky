@@ -87,4 +87,38 @@ describe('tabs store', () => {
     const order = useTabs.getState().tabs.map((t) => t.id)
     expect(order).toEqual([ids[1], ids[2], ids[0]])
   })
+
+  it('restores from a draft as a dirty tab carrying both buffers', () => {
+    const id = useTabs.getState().restoreFromDraft({
+      draftId: 'old-tab',
+      originPath: '/x/a.md',
+      title: 'a.md',
+      content: 'edited but unsaved',
+      savedContent: 'on-disk',
+      mtimeMs: 42,
+      savedAt: 100
+    })
+    const tab = useTabs.getState().tabs.find((t) => t.id === id)!
+    expect(tab.path).toBe('/x/a.md')
+    expect(tab.title).toBe('a.md')
+    expect(tab.content).toBe('edited but unsaved')
+    expect(tab.savedContent).toBe('on-disk')
+    expect(tab.mtimeMs).toBe(42)
+    expect(isDirty(tab)).toBe(true)
+    expect(useTabs.getState().activeId).toBe(id)
+  })
+
+  it('restores an untitled draft (no originPath)', () => {
+    const id = useTabs.getState().restoreFromDraft({
+      draftId: 'old-tab',
+      title: 'Untitled-3',
+      content: 'scratch',
+      savedContent: '',
+      savedAt: 100
+    })
+    const tab = useTabs.getState().tabs.find((t) => t.id === id)!
+    expect(tab.path).toBeUndefined()
+    expect(tab.title).toBe('Untitled-3')
+    expect(isDirty(tab)).toBe(true)
+  })
 })

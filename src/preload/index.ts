@@ -4,7 +4,8 @@ import type {
   ExportPdfOptions,
   FileReadResult,
   OpenFileOptions,
-  SaveDialogResult
+  SaveDialogResult,
+  Draft
 } from '@shared/types'
 import type { AIChatRequest, AIProvider, AISettings, AIStreamEvent } from '@shared/ai'
 
@@ -60,6 +61,14 @@ const api = {
       canceled: boolean
       path?: string
     }>,
+
+  drafts: {
+    list: () => ipcRenderer.invoke(IPC.DRAFTS_LIST) as Promise<Draft[]>,
+    save: (draft: Draft) => ipcRenderer.invoke(IPC.DRAFTS_SAVE, draft) as Promise<void>,
+    delete: (draftId: string) =>
+      ipcRenderer.invoke(IPC.DRAFTS_DELETE, draftId) as Promise<void>,
+    clearAll: () => ipcRenderer.invoke(IPC.DRAFTS_CLEAR_ALL) as Promise<void>
+  },
 
   updates: {
     check: () => ipcRenderer.send(IPC.UPDATE_CHECK),

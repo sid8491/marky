@@ -11,6 +11,7 @@ import {
 import { registerPdfIpc } from './ipc/pdf'
 import { registerAiIpc } from './ipc/ai'
 import { registerUpdatesIpc } from './ipc/updates'
+import { registerDraftsIpc } from './ipc/drafts'
 
 const MD_EXTENSIONS = /\.(md|markdown|mdx|txt)$/i
 
@@ -99,6 +100,7 @@ if (!gotSingleInstanceLock) {
     registerPdfIpc(getMainWindow)
     registerAiIpc(getMainWindow)
     registerUpdatesIpc(getMainWindow)
+    registerDraftsIpc()
 
     // Windows/Linux: file path is passed as argv when the OS launches us via
     // a file association. Queue these before showing the window.

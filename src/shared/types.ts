@@ -26,3 +26,23 @@ export interface ExportPdfOptions {
   margins?: 'default' | 'narrow' | 'none'
   printBackground?: boolean
 }
+
+/**
+ * A snapshot of a dirty editor buffer, persisted to disk so it can be
+ * recovered if the app crashes or is killed before the user saves.
+ */
+export interface Draft {
+  draftId: string
+  /** Original file path, if the buffer was opened from disk. */
+  originPath?: string
+  /** Tab title at the time of capture (basename or "Untitled-N"). */
+  title: string
+  /** Editor content at the time of capture. */
+  content: string
+  /** The disk-truth content the buffer would compare dirty against. */
+  savedContent: string
+  /** mtime of the original file when the buffer was opened. */
+  mtimeMs?: number
+  /** Epoch ms when this snapshot was last written. */
+  savedAt: number
+}

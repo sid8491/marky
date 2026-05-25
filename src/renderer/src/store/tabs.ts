@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { uid } from '@/lib/id'
+import type { Draft } from '@shared/types'
 
 export type ViewMode = 'edit' | 'split' | 'preview'
 
@@ -37,6 +38,7 @@ interface TabsState {
   setSplitRatio: (id: string, ratio: number) => void
   rename: (id: string, path: string) => void
   reorder: (fromIndex: number, toIndex: number) => void
+  restoreFromDraft: (draft: Draft) => string
 }
 
 function makeUntitled(seq: number): Tab {
@@ -158,7 +160,24 @@ export const useTabs = create<TabsState>((set, get) => ({
       const [moved] = next.splice(fromIndex, 1)
       next.splice(toIndex, 0, moved)
       return { tabs: next }
-    })
+    }),
+
+  restoreFromDraft: (draft) => {
+    const tab: Tab = {
+      id: uid('tab'),
+      path: draft.originPath,
+      title: draft.title,
+      content: draft.content,
+      savedContent: draft.savedContent,
+      mtimeMs: draft.mtimeMs,
+      viewMode: 'split',
+      splitRatio: 0.5,
+      scrollEditor: 0,
+      scrollPreview: 0
+    }
+    set((s) => ({ tabs: [...s.tabs, tab], activeId: tab.id }))
+    return tab.id
+  }
 }))
 
 export function isDirty(tab: Tab): boolean {
