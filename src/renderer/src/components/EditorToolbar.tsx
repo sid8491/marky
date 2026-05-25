@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { EditorView } from '@codemirror/view'
+import { undo, redo } from '@codemirror/commands'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   Bold,
@@ -18,6 +19,8 @@ import {
   Table as TableIcon,
   Sigma,
   Workflow,
+  Undo2,
+  Redo2,
   ChevronDown,
   type LucideIcon
 } from 'lucide-react'
@@ -26,12 +29,14 @@ import { md } from '@/editor/markdownCommands'
 
 interface Props {
   viewRef: React.MutableRefObject<EditorView | null>
+  canUndo: boolean
+  canRedo: boolean
 }
 
 const TABLE_MAX_ROWS = 6
 const TABLE_MAX_COLS = 8
 
-export function EditorToolbar({ viewRef }: Props): React.ReactElement {
+export function EditorToolbar({ viewRef, canUndo, canRedo }: Props): React.ReactElement {
   const run = (fn: (view: EditorView) => void): void => {
     const view = viewRef.current
     if (!view) return
@@ -40,6 +45,19 @@ export function EditorToolbar({ viewRef }: Props): React.ReactElement {
 
   return (
     <div className="flex h-9 flex-shrink-0 items-center gap-0.5 overflow-x-auto border-b border-subtle bg-panel/60 px-2">
+      <ToolButton
+        onClick={() => run((v) => void undo(v))}
+        icon={Undo2}
+        title="Undo (Ctrl+Z)"
+        disabled={!canUndo}
+      />
+      <ToolButton
+        onClick={() => run((v) => void redo(v))}
+        icon={Redo2}
+        title="Redo (Ctrl+Y)"
+        disabled={!canRedo}
+      />
+      <Divider />
       <HeadingMenu onChoose={(level) => run((v) => md.setHeading(v, level))} />
       <Divider />
       <ToolButton onClick={() => run(md.bold)} icon={Bold} title="Bold (Ctrl+B)" />
@@ -76,19 +94,27 @@ export function EditorToolbar({ viewRef }: Props): React.ReactElement {
 function ToolButton({
   onClick,
   icon: Icon,
-  title
+  title,
+  disabled
 }: {
   onClick: () => void
   icon: LucideIcon
   title: string
+  disabled?: boolean
 }): React.ReactElement {
   return (
     <button
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
+      disabled={disabled}
       title={title}
       aria-label={title}
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-elevated hover:text-default"
+      className={cn(
+        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors',
+        disabled
+          ? 'cursor-not-allowed text-faint opacity-50'
+          : 'text-muted hover:bg-elevated hover:text-default'
+      )}
     >
       <Icon className="size-4" strokeWidth={1.75} />
     </button>

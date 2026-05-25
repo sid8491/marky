@@ -11,7 +11,9 @@ import {
   defaultKeymap,
   history,
   historyKeymap,
-  indentWithTab
+  indentWithTab,
+  undoDepth,
+  redoDepth
 } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
@@ -48,6 +50,8 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
   const showLineNumbers = useSettings((s) => s.showLineNumbers)
   const [selectionInfo, setSelectionInfo] = useState<SelectionInfo | null>(null)
   const [paneWidth, setPaneWidth] = useState(0)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
 
   useEffect(() => {
     const el = wrapperRef.current
@@ -110,6 +114,10 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
           if (u.docChanged) {
             updateContent(tab.id, u.state.doc.toString())
           }
+          const nextCanUndo = undoDepth(u.state) > 0
+          const nextCanRedo = redoDepth(u.state) > 0
+          setCanUndo((prev) => (prev === nextCanUndo ? prev : nextCanUndo))
+          setCanRedo((prev) => (prev === nextCanRedo ? prev : nextCanRedo))
         })
       ]
     })
@@ -117,6 +125,10 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
     const view = new EditorView({ state, parent: hostRef.current })
     viewRef.current = view
     setActiveEditorView(view)
+    // Reset history affordances when switching tabs — the new view starts with
+    // an empty undo stack, so any state left over from the previous tab is wrong.
+    setCanUndo(false)
+    setCanRedo(false)
 
     const scrollDom = view.scrollDOM
     let receivingProgrammaticScroll = false
@@ -164,7 +176,7 @@ export function EditorPane({ tab }: { tab: Tab }): React.ReactElement {
 
   return (
     <div ref={wrapperRef} className="flex h-full w-full flex-col">
-      <EditorToolbar viewRef={viewRef} />
+      <EditorToolbar viewRef={viewRef} canUndo={canUndo} canRedo={canRedo} />
       <div className="relative min-h-0 flex-1">
         <div ref={hostRef} className="allow-select h-full w-full overflow-auto" />
         <SelectionToolbar

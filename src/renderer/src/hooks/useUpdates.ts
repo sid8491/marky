@@ -1,11 +1,14 @@
 import { useEffect } from 'react'
 import { toast, useToasts } from '@/store/toasts'
+import { useUpdateStatus } from '@/store/updateStatus'
 
 const NOTIFIED_KEY = 'marky:update-notified-version'
 
 export function useUpdates(): void {
   useEffect(() => {
     return window.marky.updates.onEvent((event) => {
+      useUpdateStatus.getState().apply(event)
+
       if (event.type === 'downloaded') {
         // Avoid spamming the same version on repeat checks
         const last = localStorage.getItem(NOTIFIED_KEY)

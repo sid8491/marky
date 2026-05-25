@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { X, Check, AlertTriangle, Trash2, Loader2, Download } from 'lucide-react'
+import {
+  X,
+  Check,
+  Trash2,
+  Loader2,
+  Download,
+  Info,
+  FileDown,
+  Sparkles,
+  KeyRound,
+  Server
+} from 'lucide-react'
 import { useAi } from '@/store/ai'
 import { useSettings } from '@/store/settings'
+import { useUpdateStatus, type UpdatePhase } from '@/store/updateStatus'
 import { toast } from '@/store/toasts'
 import { manualCheckForUpdates } from '@/hooks/useUpdates'
 import { cn } from '@/lib/cn'
@@ -23,19 +35,22 @@ const PROVIDER_HINTS: Record<AIProvider, string> = {
   ollama: 'No API key — uses your local Ollama instance'
 }
 
+type TabKey = 'about' | 'pdf' | 'ai-provider' | 'api-keys' | 'ollama'
+
+const TABS: { key: TabKey; label: string; Icon: typeof Info }[] = [
+  { key: 'about', label: 'About', Icon: Info },
+  { key: 'pdf', label: 'PDF export', Icon: FileDown },
+  { key: 'ai-provider', label: 'AI provider', Icon: Sparkles },
+  { key: 'api-keys', label: 'API keys', Icon: KeyRound },
+  { key: 'ollama', label: 'Ollama', Icon: Server }
+]
+
 export function SettingsModal(): React.ReactElement {
   const open = useAi((s) => s.open)
   const close = useAi((s) => s.closeSettings)
   const settings = useAi((s) => s.settings)
   const load = useAi((s) => s.load)
-  const setProvider = useAi((s) => s.setProvider)
-  const setModel = useAi((s) => s.setModel)
-  const setTemperature = useAi((s) => s.setTemperature)
-  const setGhostText = useAi((s) => s.setGhostText)
-  const setOllamaUrl = useAi((s) => s.setOllamaUrl)
-  const saveKey = useAi((s) => s.saveKey)
-  const removeKey = useAi((s) => s.removeKey)
-  const test = useAi((s) => s.test)
+  const [activeTab, setActiveTab] = useState<TabKey>('about')
 
   useEffect(() => {
     if (!settings) void load()
@@ -73,7 +88,7 @@ export function SettingsModal(): React.ReactElement {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="w-full max-w-2xl overflow-hidden rounded-xl border border-strong bg-elevated shadow-elevated"
+            className="w-full max-w-3xl overflow-hidden rounded-xl border border-strong bg-elevated shadow-elevated"
           >
             <header className="flex items-center justify-between border-b border-subtle px-5 py-3">
               <h2 className="text-sm font-semibold text-default">Settings</h2>
@@ -86,82 +101,27 @@ export function SettingsModal(): React.ReactElement {
               </button>
             </header>
 
-            <div className="max-h-[70vh] overflow-y-auto p-5">
-              <AboutSection />
-
-              <PdfExportSection />
-
-              <Section title="AI provider">
-                <Field label="Active provider">
-                  <Select
-                    value={settings.provider}
-                    onChange={(v) => void setProvider(v as AIProvider)}
-                    options={(Object.keys(PROVIDER_LABELS) as AIProvider[]).map((p) => ({
-                      value: p,
-                      label: PROVIDER_LABELS[p]
-                    }))}
-                  />
-                </Field>
-                <Field label={`Model · ${PROVIDER_LABELS[settings.provider]}`}>
-                  <input
-                    value={settings.models[settings.provider]}
-                    onChange={(e) => void setModel(settings.provider, e.target.value)}
-                    className="w-full rounded-md border border-subtle bg-panel px-3 py-1.5 text-sm focus:border-strong focus:outline-none"
-                    placeholder="model name"
-                  />
-                </Field>
-                <Field label="Temperature">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={settings.temperature}
-                      onChange={(e) => void setTemperature(parseFloat(e.target.value))}
-                      className="flex-1 accent-accent"
-                    />
-                    <span className="w-10 text-right font-mono text-xs text-muted">
-                      {settings.temperature.toFixed(2)}
-                    </span>
-                  </div>
-                </Field>
-                <Field label="Auto-suggest as I type">
-                  <Toggle
-                    checked={settings.ghostTextEnabled}
-                    onChange={(v) => void setGhostText(v)}
-                    description="When on, an AI continuation appears as gray ghost-text after you pause typing. Press Tab to accept, Esc to dismiss. Off by default — use Ctrl+J or the command palette to request a suggestion manually."
-                  />
-                </Field>
-              </Section>
-
-              <Section title="API keys">
-                <p className="mb-3 text-xs text-faint">
-                  Keys are encrypted with your OS keychain (DPAPI / Keychain / libsecret)
-                  — they never leave your machine and the renderer never sees them.
-                </p>
-                {(Object.keys(PROVIDER_LABELS) as AIProvider[]).map((p) => (
-                  <KeyRow
-                    key={p}
-                    provider={p}
-                    keySet={settings.keys[p]}
-                    onSave={(v) => saveKey(p, v)}
-                    onRemove={() => removeKey(p)}
-                    onTest={() => test(p)}
+            <div className="flex h-[70vh]">
+              <nav
+                aria-label="Settings sections"
+                className="w-48 shrink-0 overflow-y-auto border-r border-subtle bg-panel/40 py-3"
+              >
+                {TABS.map((tab) => (
+                  <TabButton
+                    key={tab.key}
+                    tab={tab}
+                    active={tab.key === activeTab}
+                    onClick={() => setActiveTab(tab.key)}
                   />
                 ))}
-              </Section>
-
-              <Section title="Ollama">
-                <Field label="Server URL">
-                  <input
-                    value={settings.ollamaUrl}
-                    onChange={(e) => void setOllamaUrl(e.target.value)}
-                    className="w-full rounded-md border border-subtle bg-panel px-3 py-1.5 text-sm focus:border-strong focus:outline-none"
-                    placeholder="http://localhost:11434"
-                  />
-                </Field>
-              </Section>
+              </nav>
+              <div className="flex-1 overflow-y-auto p-5">
+                {activeTab === 'about' && <AboutPanel />}
+                {activeTab === 'pdf' && <PdfExportPanel />}
+                {activeTab === 'ai-provider' && <AiProviderPanel />}
+                {activeTab === 'api-keys' && <ApiKeysPanel />}
+                {activeTab === 'ollama' && <OllamaPanel />}
+              </div>
             </div>
           </motion.div>
         </motion.div>
@@ -170,48 +130,178 @@ export function SettingsModal(): React.ReactElement {
   )
 }
 
-function AboutSection(): React.ReactElement {
+function TabButton({
+  tab,
+  active,
+  onClick
+}: {
+  tab: (typeof TABS)[number]
+  active: boolean
+  onClick: () => void
+}): React.ReactElement {
+  const { Icon, label } = tab
+  return (
+    <button
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors',
+        active
+          ? 'bg-elevated text-default font-medium'
+          : 'text-muted hover:bg-elevated/60 hover:text-default'
+      )}
+    >
+      <Icon className={cn('size-4 shrink-0', active ? 'text-accent' : 'text-faint')} />
+      {label}
+    </button>
+  )
+}
+
+function AboutPanel(): React.ReactElement {
   const [version, setVersion] = useState<string | null>(null)
-  const [checking, setChecking] = useState(false)
+  const [clickedCheck, setClickedCheck] = useState(false)
+  const phase = useUpdateStatus((s) => s.phase)
+  const percent = useUpdateStatus((s) => s.percent)
+  const updateVersion = useUpdateStatus((s) => s.version)
+  const errorMessage = useUpdateStatus((s) => s.errorMessage)
 
   useEffect(() => {
     void window.marky.appVersion().then(setVersion)
   }, [])
 
   const handleCheck = (): void => {
-    setChecking(true)
+    setClickedCheck(true)
     manualCheckForUpdates()
-    // The toast lifecycle handles result; clear the local spinner shortly
-    // after the request fires so the button stops looking pending.
-    setTimeout(() => setChecking(false), 1500)
+    // The toast lifecycle handles the result; clear the local spinner shortly
+    // after the request fires so the button stops looking pending if the main
+    // process is silent. The store-driven status line takes over from here.
+    setTimeout(() => setClickedCheck(false), 1500)
   }
 
+  const handleRestart = (): void => window.marky.updates.install()
+
+  const busy = clickedCheck || phase === 'checking' || phase === 'downloading'
+
   return (
-    <section className="mb-6">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
-        About
-      </h3>
-      <div className="flex items-center justify-between rounded-lg border border-subtle bg-panel/50 p-3">
-        <div>
+    <div className="rounded-lg border border-subtle bg-panel/50 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <div className="text-sm font-medium text-default">Marky</div>
           <div className="mt-0.5 font-mono text-xs text-faint">
             {version ? `v${version}` : 'loading…'}
           </div>
         </div>
-        <button
-          onClick={handleCheck}
-          disabled={checking}
-          className="flex items-center gap-2 rounded-md border border-strong bg-elevated px-3 py-1.5 text-xs font-medium text-default transition-colors hover:bg-panel disabled:opacity-60"
-        >
-          {checking ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
+        {phase === 'downloaded' ? (
+          <button
+            onClick={handleRestart}
+            className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90"
+          >
             <Download className="size-3.5" />
-          )}
-          Check for updates
-        </button>
+            Restart to install
+          </button>
+        ) : (
+          <button
+            onClick={handleCheck}
+            disabled={busy}
+            className="flex items-center gap-2 rounded-md border border-strong bg-elevated px-3 py-1.5 text-xs font-medium text-default transition-colors hover:bg-panel disabled:opacity-60"
+          >
+            {busy ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Download className="size-3.5" />
+            )}
+            Check for updates
+          </button>
+        )}
       </div>
-    </section>
+      <UpdateStatusLine
+        phase={phase}
+        percent={percent}
+        version={updateVersion}
+        errorMessage={errorMessage}
+      />
+    </div>
+  )
+}
+
+function UpdateStatusLine({
+  phase,
+  percent,
+  version,
+  errorMessage
+}: {
+  phase: UpdatePhase
+  percent: number
+  version: string | null
+  errorMessage: string | null
+}): React.ReactElement | null {
+  if (phase === 'idle' || phase === 'not-available') return null
+
+  if (phase === 'checking') {
+    return <StatusRow tone="muted">Checking for updates…</StatusRow>
+  }
+
+  if (phase === 'available') {
+    return (
+      <StatusRow tone="muted">v{version} is available — download starting…</StatusRow>
+    )
+  }
+
+  if (phase === 'downloading') {
+    const clamped = Math.max(0, Math.min(100, Math.round(percent)))
+    return (
+      <div className="mt-3">
+        <div className="mb-1 flex items-center justify-between text-xs">
+          <span className="text-muted">Downloading{version ? ` v${version}` : ''}…</span>
+          <span className="font-mono text-faint">{clamped}%</span>
+        </div>
+        <div
+          role="progressbar"
+          aria-valuenow={clamped}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Update download progress"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-elevated"
+        >
+          <div
+            className="h-full bg-accent transition-[width] duration-150 ease-out"
+            style={{ width: `${clamped}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === 'downloaded') {
+    return (
+      <StatusRow tone="accent">v{version} is downloaded and ready to install.</StatusRow>
+    )
+  }
+
+  // phase === 'error'
+  return (
+    <StatusRow tone="error">Update failed: {errorMessage ?? 'unknown error'}</StatusRow>
+  )
+}
+
+function StatusRow({
+  tone,
+  children
+}: {
+  tone: 'muted' | 'accent' | 'error'
+  children: React.ReactNode
+}): React.ReactElement {
+  return (
+    <div
+      className={cn(
+        'mt-3 text-xs',
+        tone === 'muted' && 'text-muted',
+        tone === 'accent' && 'text-accent',
+        tone === 'error' && 'text-red-500'
+      )}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -230,12 +320,12 @@ const MARGIN_OPTIONS: { value: PdfMarginPreset; label: string }[] = [
   { value: 'none', label: 'None (0 in)' }
 ]
 
-function PdfExportSection(): React.ReactElement {
+function PdfExportPanel(): React.ReactElement {
   const pdf = useSettings((s) => s.pdf)
   const setPdf = useSettings((s) => s.setPdf)
 
   return (
-    <Section title="PDF export">
+    <PanelBody>
       <Field label="Page size">
         <Select
           value={pdf.pageSize}
@@ -267,25 +357,114 @@ function PdfExportSection(): React.ReactElement {
           description="Show 'X / Y' centred at the foot of each page. Forces a minimum 0.5 in vertical margin so the footer doesn't overlap content."
         />
       </Field>
-    </Section>
+    </PanelBody>
   )
 }
 
-function Section({
-  title,
-  children
-}: {
-  title: string
-  children: React.ReactNode
-}): React.ReactElement {
+function AiProviderPanel(): React.ReactElement {
+  const settings = useAi((s) => s.settings)!
+  const setProvider = useAi((s) => s.setProvider)
+  const setModel = useAi((s) => s.setModel)
+  const setTemperature = useAi((s) => s.setTemperature)
+  const setGhostText = useAi((s) => s.setGhostText)
+
   return (
-    <section className="mb-6 last:mb-0">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
-        {title}
-      </h3>
-      <div className="space-y-3">{children}</div>
-    </section>
+    <PanelBody>
+      <Field label="Active provider">
+        <Select
+          value={settings.provider}
+          onChange={(v) => void setProvider(v as AIProvider)}
+          options={(Object.keys(PROVIDER_LABELS) as AIProvider[]).map((p) => ({
+            value: p,
+            label: PROVIDER_LABELS[p]
+          }))}
+        />
+      </Field>
+      <Field label={`Model · ${PROVIDER_LABELS[settings.provider]}`}>
+        <input
+          value={settings.models[settings.provider]}
+          onChange={(e) => void setModel(settings.provider, e.target.value)}
+          className="w-full rounded-md border border-subtle bg-panel px-3 py-1.5 text-sm focus:border-strong focus:outline-none"
+          placeholder="model name"
+        />
+      </Field>
+      <Field label="Temperature">
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={settings.temperature}
+            onChange={(e) => void setTemperature(parseFloat(e.target.value))}
+            className="flex-1 accent-accent"
+          />
+          <span className="w-10 text-right font-mono text-xs text-muted">
+            {settings.temperature.toFixed(2)}
+          </span>
+        </div>
+      </Field>
+      <Field label="Auto-suggest as I type">
+        <Toggle
+          checked={settings.ghostTextEnabled}
+          onChange={(v) => void setGhostText(v)}
+          description="When on, an AI continuation appears as gray ghost-text after you pause typing. Press Tab to accept, Esc to dismiss. Off by default — use Ctrl+J or the command palette to request a suggestion manually."
+        />
+      </Field>
+    </PanelBody>
   )
+}
+
+function ApiKeysPanel(): React.ReactElement {
+  const settings = useAi((s) => s.settings)!
+  const saveKey = useAi((s) => s.saveKey)
+  const removeKey = useAi((s) => s.removeKey)
+  const test = useAi((s) => s.test)
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-faint">
+        Keys are encrypted with your OS keychain (DPAPI / Keychain / libsecret) — they
+        never leave your machine and the renderer never sees them.
+      </p>
+      {(Object.keys(PROVIDER_LABELS) as AIProvider[]).map((p) => (
+        <KeyRow
+          key={p}
+          provider={p}
+          keySet={settings.keys[p]}
+          onSave={(v) => saveKey(p, v)}
+          onRemove={() => removeKey(p)}
+          onTest={() => test(p)}
+        />
+      ))}
+    </div>
+  )
+}
+
+function OllamaPanel(): React.ReactElement {
+  const settings = useAi((s) => s.settings)!
+  const setOllamaUrl = useAi((s) => s.setOllamaUrl)
+
+  return (
+    <PanelBody>
+      <Field label="Server URL">
+        <input
+          value={settings.ollamaUrl}
+          onChange={(e) => void setOllamaUrl(e.target.value)}
+          className="w-full rounded-md border border-subtle bg-panel px-3 py-1.5 text-sm focus:border-strong focus:outline-none"
+          placeholder="http://localhost:11434"
+        />
+      </Field>
+      <p className="text-xs text-faint">
+        Ollama runs models on your machine — no key required. The Ollama provider in AI
+        provider sends requests to this URL.
+      </p>
+    </PanelBody>
+  )
+}
+
+function PanelBody({ children }: { children: React.ReactNode }): React.ReactElement {
+  return <div className="space-y-3">{children}</div>
 }
 
 function Field({
@@ -499,5 +678,3 @@ function KeyRow({
 
 // re-export for label lookups
 export { PROVIDER_LABELS }
-// suppress unused (used in keyrow)
-void AlertTriangle
