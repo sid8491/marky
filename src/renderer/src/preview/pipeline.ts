@@ -12,8 +12,7 @@ import type { Root, Element, Text } from 'hast'
 function rehypeMermaidExtract() {
   return (tree: Root): void => {
     visit(tree, 'element', (node: Element, idx, parent) => {
-      if (node.tagName !== 'pre' || !parent || idx == null || parent.type !== 'element')
-        return
+      if (node.tagName !== 'pre' || !parent || idx == null) return
       const code = node.children.find(
         (c): c is Element => c.type === 'element' && c.tagName === 'code'
       )

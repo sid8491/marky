@@ -28,11 +28,19 @@ describe('renderMarkdown', () => {
     expect(html).not.toContain('<script>alert(1)</script>')
   })
 
-  it.todo(
-    'lifts ```mermaid fences into a div.mermaid-block with the source as a data attribute ' +
-      '(currently broken — rehypeMermaidExtract guards on parent.type === "element" and so ' +
-      'skips top-level <pre> blocks, leaving them to be highlighted by Shiki)'
-  )
+  it('lifts ```mermaid fences into a div.mermaid-block with the source as a data attribute', async () => {
+    const html = await renderMarkdown('```mermaid\ngraph TD\n  A --> B\n```')
+    expect(html).toContain('class="mermaid-block"')
+    expect(html).toMatch(/data-mermaid-source="graph TD\s+A --> B/)
+    expect(html).not.toContain('language-mermaid')
+    expect(html).not.toContain('<pre')
+  })
+
+  it('lifts mermaid fences even when nested inside another element (e.g. a blockquote)', async () => {
+    const html = await renderMarkdown('> ```mermaid\n> graph TD\n>   A --> B\n> ```')
+    expect(html).toContain('class="mermaid-block"')
+    expect(html).not.toContain('language-mermaid')
+  })
 
   it('syntax-highlights non-mermaid code fences via Shiki', async () => {
     const html = await renderMarkdown('```ts\nconst x: number = 1\n```')
