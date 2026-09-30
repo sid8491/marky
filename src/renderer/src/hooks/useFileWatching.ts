@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useTabs, isDirty } from '@/store/tabs'
 import { toast } from '@/store/toasts'
+import { isOwnWrite } from '@/lib/ownWrites'
 
 export function useFileWatching(): void {
   const tabs = useTabs((s) => s.tabs)
@@ -30,7 +31,11 @@ export function useFileWatching(): void {
       const state = useTabs.getState()
       const tab = state.tabs.find((t) => t.path === path)
       if (!tab) return
-      if (tab.mtimeMs && Math.abs(tab.mtimeMs - mtimeMs) < 5) return // our own write
+      // Our own save: either the write is still in flight (the change event
+      // usually beats the IPC reply, especially on Windows), or it completed
+      // moments ago, or the mtime matches what we recorded on markSaved.
+      if (isOwnWrite(path)) return
+      if (tab.mtimeMs && Math.abs(tab.mtimeMs - mtimeMs) < 5) return
       void handleExternalChange(tab.id, path, mtimeMs, isDirty(tab))
     })
   }, [])

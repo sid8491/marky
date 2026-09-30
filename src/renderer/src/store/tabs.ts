@@ -32,6 +32,12 @@ interface TabsState {
   openFile: (file: { path: string; content: string; mtimeMs: number }) => string
   closeTab: (id: string) => void
   setActive: (id: string) => void
+  /** Activate the tab at `index` (0-based); out-of-range is a no-op. */
+  activateAt: (index: number) => void
+  /** Activate the last tab; no-op when there are none. */
+  activateLast: () => void
+  /** Move the active tab by `delta` positions, wrapping around both ends. */
+  activateRelative: (delta: number) => void
   updateContent: (id: string, content: string) => void
   markSaved: (id: string, savedContent: string, mtimeMs: number, path?: string) => void
   setViewMode: (id: string, mode: ViewMode) => void
@@ -113,6 +119,27 @@ export const useTabs = create<TabsState>((set, get) => ({
   },
 
   setActive: (id) => set({ activeId: id }),
+
+  activateAt: (index) =>
+    set((s) => {
+      const tab = s.tabs[index]
+      return tab ? { activeId: tab.id } : s
+    }),
+
+  activateLast: () =>
+    set((s) => {
+      const tab = s.tabs[s.tabs.length - 1]
+      return tab ? { activeId: tab.id } : s
+    }),
+
+  activateRelative: (delta) =>
+    set((s) => {
+      const n = s.tabs.length
+      if (n === 0) return s
+      const cur = s.tabs.findIndex((t) => t.id === s.activeId)
+      const next = ((((cur === -1 ? 0 : cur) + delta) % n) + n) % n
+      return { activeId: s.tabs[next].id }
+    }),
 
   updateContent: (id, content) =>
     set((s) => ({

@@ -14,6 +14,8 @@ import {
   FileText,
   Hash,
   ArrowDownUp,
+  ArrowLeft,
+  ArrowRight,
   Sparkles,
   type LucideIcon
 } from 'lucide-react'
@@ -125,6 +127,22 @@ export function CommandPalette(): React.ReactElement {
         shortcut: 'Ctrl W',
         icon: XCircle,
         run: () => fileCmds.closeActive()
+      },
+      {
+        id: 'view.tab.next',
+        label: 'Next tab',
+        group: 'View',
+        shortcut: 'Ctrl Tab',
+        icon: ArrowRight,
+        run: () => useTabs.getState().activateRelative(1)
+      },
+      {
+        id: 'view.tab.prev',
+        label: 'Previous tab',
+        group: 'View',
+        shortcut: 'Ctrl Shift Tab',
+        icon: ArrowLeft,
+        run: () => useTabs.getState().activateRelative(-1)
       },
       {
         id: 'view.edit',

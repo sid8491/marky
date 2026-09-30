@@ -153,6 +153,12 @@ The Electron window opens with HMR enabled. Press `Ctrl+K` for the command palet
 | `Ctrl+S`                  | Save                              |
 | `Ctrl+Shift+S`            | Save as                           |
 | `Ctrl+W`                  | Close active tab                  |
+| `Ctrl+1` … `Ctrl+8`       | Jump to tab 1–8                   |
+| `Ctrl+9`                  | Jump to last tab                  |
+| `Ctrl+Tab`                | Next tab                          |
+| `Ctrl+Shift+Tab`          | Previous tab                      |
+| `Ctrl+=` / `Ctrl+-`       | Zoom in / out                     |
+| `Ctrl+0`                  | Reset zoom                        |
 | `Ctrl+E`                  | Export to PDF                     |
 | `Ctrl+K`                  | Command palette                   |
 | `Ctrl+,`                  | Settings                          |
@@ -222,7 +228,7 @@ src/
       preview/       unified pipeline + Mermaid hydration + styles.css
       store/         Zustand stores (tabs, settings, recent, toasts, ai)
       ai/            Streaming client + prompt templates
-      hooks/         useFileCommands, useViewShortcuts, useFileWatching
+      hooks/         useFileCommands, useViewShortcuts, useTabShortcuts, useFileWatching
       lib/           cn, id, exportPdf
       styles.css     Tailwind + theme tokens
 ```

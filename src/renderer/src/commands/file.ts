@@ -3,6 +3,7 @@ import { useSettings } from '@/store/settings'
 import { useRecent } from '@/store/recent'
 import { toast } from '@/store/toasts'
 import { exportToPdf } from '@/lib/exportPdf'
+import { beginOwnWrite, endOwnWrite } from '@/lib/ownWrites'
 
 /**
  * File-level commands. All read live state via Zustand `getState()`, so they
@@ -38,12 +39,25 @@ export async function openPath(path: string): Promise<void> {
   }
 }
 
+/**
+ * Write `content` to `path`, bracketing the IPC call so the file watcher can
+ * recognise the resulting change event as our own (see lib/ownWrites.ts).
+ */
+async function writeOwn(path: string, content: string): Promise<{ mtimeMs: number }> {
+  beginOwnWrite(path)
+  try {
+    return await window.marky.files.write(path, content)
+  } finally {
+    endOwnWrite(path)
+  }
+}
+
 export async function saveActive(): Promise<void> {
   const { tabs, activeId, markSaved } = useTabs.getState()
   const tab = tabs.find((t) => t.id === activeId)
   if (!tab) return
   if (!tab.path) return saveActiveAs()
-  const { mtimeMs } = await window.marky.files.write(tab.path, tab.content)
+  const { mtimeMs } = await writeOwn(tab.path, tab.content)
   markSaved(tab.id, tab.content, mtimeMs)
 }
 
@@ -55,7 +69,7 @@ export async function saveActiveAs(): Promise<void> {
     defaultName: tab.path ? tab.title : tab.title + '.md'
   })
   if (result.canceled || !result.path) return
-  const { mtimeMs } = await window.marky.files.write(result.path, tab.content)
+  const { mtimeMs } = await writeOwn(result.path, tab.content)
   markSaved(tab.id, tab.content, mtimeMs, result.path)
   useRecent.getState().add(result.path, '')
 }

@@ -77,6 +77,38 @@ describe('tabs store', () => {
     expect(useTabs.getState().activeId).toBeNull()
   })
 
+  it('activates a tab by index and ignores out-of-range indexes', () => {
+    const a = useTabs.getState().newTab()
+    const b = useTabs.getState().newTab()
+    useTabs.getState().activateAt(0)
+    expect(useTabs.getState().activeId).toBe(a)
+    useTabs.getState().activateAt(5)
+    expect(useTabs.getState().activeId).toBe(a)
+    useTabs.getState().activateLast()
+    expect(useTabs.getState().activeId).toBe(b)
+  })
+
+  it('cycles the active tab relative to the current one, wrapping around', () => {
+    const a = useTabs.getState().newTab()
+    const b = useTabs.getState().newTab()
+    const c = useTabs.getState().newTab()
+    expect(useTabs.getState().activeId).toBe(c)
+
+    useTabs.getState().activateRelative(1)
+    expect(useTabs.getState().activeId).toBe(a)
+    useTabs.getState().activateRelative(1)
+    expect(useTabs.getState().activeId).toBe(b)
+    useTabs.getState().activateRelative(-1)
+    expect(useTabs.getState().activeId).toBe(a)
+    useTabs.getState().activateRelative(-1)
+    expect(useTabs.getState().activeId).toBe(c)
+  })
+
+  it('activateRelative is a no-op with no tabs', () => {
+    useTabs.getState().activateRelative(1)
+    expect(useTabs.getState().activeId).toBeNull()
+  })
+
   it('reorders tabs by index', () => {
     const ids = [
       useTabs.getState().newTab(),
